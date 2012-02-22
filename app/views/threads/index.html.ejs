@@ -1,0 +1,3 @@
+<h2>Welcome to <%= title %></h2>
+<%- partial('threadsummary.html.ejs', {collection: threads, as: 'thread'}) %>
+<a href="<%= urlFor({ action: 'new' }) %>">new</a>

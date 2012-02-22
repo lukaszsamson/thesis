@@ -1,0 +1,6 @@
+<p>Thread <%= thread.title %> by <%= thread.author %></p>
+<%- partial('threadpost.html.ejs', {collection: thread.posts, as: 'post'}) %>
+<form method="post" action="<%= urlFor({action: 'post', id: thread._id}) %>">
+<input type="text" name="body">
+<input type="submit" value="post">
+</form>
