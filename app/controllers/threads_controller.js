@@ -1,8 +1,8 @@
 var locomotive = require('locomotive')
   , Controller = locomotive.Controller;
 
-var Thread = require('../models/thread.js');
-var Post = require('../models/post.js');
+var Person = require('../models/person.js');
+var Link = require('../models/link.js');
 
 var ThreadsController = new Controller();
 
