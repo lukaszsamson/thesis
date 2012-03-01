@@ -5,6 +5,14 @@ var locomotive = require('locomotive')
   , async = require("async")
   , Q = require("q");
 
+
+var kue = require('kue');
+
+// create our job queue
+
+var jobs = kue.createQueue()
+  , Job = kue.Job;
+
 var PagesController = new Controller();
 
 var APP_ID = '102219526568766';
@@ -85,6 +93,11 @@ PagesController.main = function() {
       .then(function(body) {
         self.title = 'Locomotive';
         var friends = JSON.parse(body).data;
+
+        friends.forEach(function(friend) {
+          create(friend, self.getToken());
+        });
+
         self.render({
           friends: friends
         });
@@ -111,11 +124,11 @@ PagesController.getToken = function() {
   return this.req.session.facebookToken.access_token;
 }
 
-PagesController.getLinks = function(facebookId) {
+PagesController.getLinks = function(facebookId, access_token) {
   var self = this;
   return Q.when(facebookId)
   .then(function(id) {
-    return promissedRequest(getLinksUrl(id, self.getToken()));
+    return promissedRequest(getLinksUrl(id, access_token));
   })
   .then(function(body) {
     return JSON.parse(body).data;
@@ -133,9 +146,47 @@ PagesController.getFriends = function() {
   });
 }
 
+function create(friend, access_token) {
+  console.log('Creating job for %s', friend.name);
+  jobs.create('get links', {
+      title: 'Getting links submitted by ' + friend.name
+    , friendFacebookId: friend.id
+    , friendName: friend.name
+    , access_token: access_token
+    //, facebookId: facebookId
+  }).save();
+}
 
+jobs.process('get links', 3, function(job, done) {
+  PagesController.getLinks(job.data.friendFacebookId, job.data.access_token)
+  .then(function(links) {
+    console.log('got %d links by %s', links.length, job.data.friendName);
+    done();
+  })
+  .fail(function(error) {
+    console.log('Error while getting links by %s', job.data.friendName);
+    console.log(error);
+    done(error);
+  });
+});
 
-
+jobs.on('job complete', function(id){
+  Job.get(id, function(err, job){
+    if (err) {
+      console.log('Error while getting job #%d', job.id);
+      console.log(err);
+      return;
+    }
+    job.remove(function(err){
+      if (err) {
+        console.log('Error while getting job #%d', job.id);
+        console.log(err);
+        return;
+      }
+      console.log('removed completed job #%d', job.id);
+    });
+  });
+});
 
 // PagesController.main = function() {
 //   var self = this;
