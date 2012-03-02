@@ -1,8 +1,6 @@
 var locomotive = require('locomotive')
   , Controller = locomotive.Controller
-  , request = require('request')
-  , querystring = require('querystring')
-  , async = require("async")
+  , GraphClient = require('../utils/graph-client.js')
   , Q = require("q");
 
 
@@ -15,57 +13,7 @@ var jobs = kue.createQueue()
 
 var PagesController = new Controller();
 
-var APP_ID = '102219526568766';
-var APP_SECRET = 'ee755ea1ef4ab900bb46b497d5a93ca0';
 
-
-function getDialogUrl() {
-  var path = 'https://www.facebook.com/dialog/oauth?';
-  var queryParams = [
-    'client_id=' + APP_ID,
-    'redirect_uri=' + encodeURIComponent('http://localhost:3000/'),
-    'scope=' + 'read_stream',
-  ];
-  var query = queryParams.join('&');
-  return url = path + query;
-}
-
-function getAccessTokenUrl(code) {
-  var path = 'https://graph.facebook.com/oauth/access_token?';
-  var queryParams = [
-    'client_id=' + APP_ID,
-    'redirect_uri=' + encodeURIComponent('http://localhost:3000/'),
-    'client_secret=' + APP_SECRET,
-    'code=' + encodeURIComponent(code)
-  ];
-  var query = queryParams.join('&');
-  return url = path + query;
-}
-
-function getFriendsUrl(token) {
-  return 'https://graph.facebook.com/me/friends?access_token='
-          + encodeURIComponent(token);
-}
-
-function getLinksUrl(id, token) {
-  return 'https://graph.facebook.com/' + id + '/links?access_token='
-          + encodeURIComponent(token);
-}
-
-function promissedRequest(url) {
-  var deferred = Q.defer();
-
-  request(url, function(error, response, body) {
-    if (error) {
-      deferred.reject(error);
-    } else if(response.statusCode != 200) {
-      deferred.reject(new Error(body));
-    } else {
-      deferred.resolve(body);
-    }
-  });
-  return deferred.promise;
-}
 
 
 PagesController.main = function() {
@@ -73,19 +21,11 @@ PagesController.main = function() {
   var code = this.req.query.code;
 
   if (!self.req.session.facebookToken && !code) {
-      this.redirect(getDialogUrl());
+      this.redirect((new GraphClient)getDialogUrl());
     } else {
-
+      var access_token = 
       Q.when((function() {
 
-        if (self.req.session.facebookToken)
-          return self.req.session.facebookToken.access_token;
-
-        return Q.when(promissedRequest(getAccessTokenUrl(code))).
-          then(function(body) {
-            var result = self.req.session.facebookToken = querystring.parse(body);
-            return result.access_token;
-          });
       })())
       .then(function(access_token) {
         return promissedRequest(getFriendsUrl(access_token));
@@ -111,7 +51,8 @@ PagesController.main = function() {
 PagesController.friend = function() {
   var self = this;
   var facebookId = self.req.params.id;
-  self.getLinks(facebookId)
+  (new GraphClient(self.getToken()))
+  .getLinks(facebookId)
   .then(function(links) {
     self.render({facebookId: facebookId, links: links});
   })
@@ -120,19 +61,34 @@ PagesController.friend = function() {
   });
 }
 
-PagesController.getToken = function() {
-  return this.req.session.facebookToken.access_token;
+PagesController.friends = function() {
+  var self = this;
+  (new GraphClient(self.getToken()))
+  .getFriends()
+  .then(function(friends) {
+    friends.forEach(function(friend) {
+          create(friend, self.getToken());
+    });
+
+    self.render({
+      friends: friends
+    });
+  })
+  .fail(function(error) {
+    self.error(error);
+  });
 }
 
-PagesController.getLinks = function(facebookId, access_token) {
+PagesController.getToken = function() {
   var self = this;
-  return Q.when(facebookId)
-  .then(function(id) {
-    return promissedRequest(getLinksUrl(id, access_token));
-  })
-  .then(function(body) {
-    return JSON.parse(body).data;
-  });
+  if (self.req.session.facebookToken)
+    return self.req.session.facebookToken.access_token;
+
+  return (new GraphClient).getAccessToken()
+    .then(function(result) {
+      self.req.session.facebookToken = result;
+      return result.access_token;
+    });
 }
 
 PagesController.getFriends = function() {
@@ -145,6 +101,10 @@ PagesController.getFriends = function() {
     }).save();
   });
 }
+
+
+
+
 
 function create(friend, access_token) {
   console.log('Creating job for %s', friend.name);
