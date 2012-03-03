@@ -1,5 +1,5 @@
 module.exports = function routes() {
-  this.root('pages#main');
+  this.root('pages#test');
   this.resources('threads');
   this.match('threads/:id/post', { controller: 'threads', action: 'post', via: 'post' });
   this.match('friends/:id', { controller: 'pages', action: 'friend', via: 'get' });

@@ -19,46 +19,51 @@ function promissedRequest(url) {
   return deferred.promise;
 }
 
+
 function GraphClient(access_token) {
   this.access_token = access_token;
 }
 
 GraphClient.prototype.getLinks = function(facebookId) {
-  return promissedRequest(getLinksUrl(id))
+  return promissedRequest(this.getLinksUrl(facebookId))
   .then(function(body) {
     return JSON.parse(body).data;
   });
 }
 GraphClient.prototype.getFriends = function() {
-  return promissedRequest(getFriendsUrl())
+  return promissedRequest(this.getFriendsUrl())
   .then(function(body) {
     return JSON.parse(body).data;
   });
 }
+ 
 
-GraphClient.prototype.getAccessToken = function(code) {
-  return promissedRequest(getAccessTokenUrl(code))
-  .then(function(body) {
-    return querystring.parse(body);
-  });
+GraphClient.prototype.getFriendsUrl = function() {
+  return 'https://graph.facebook.com/me/friends?access_token='
+          + encodeURIComponent(this.access_token);
 }
 
-GraphClient.prototype.getDialogUrl = function() {
+GraphClient.prototype.getLinksUrl = function(facebookId) {
+  return 'https://graph.facebook.com/' + facebookId + '/links?access_token='
+          + encodeURIComponent(this.access_token);
+}
+
+function getDialogUrl() {
   var path = 'https://www.facebook.com/dialog/oauth?';
   var queryParams = [
     'client_id=' + locomotive.set('facebook app id'),
-    'redirect_uri=' + encodeURIComponent('http://localhost:3000/'),
+    'redirect_uri=' + encodeURIComponent(locomotive.set('facebook redirect')),
     'scope=' + 'read_stream',
   ];
   var query = queryParams.join('&');
   return url = path + query;
 }
 
-GraphClient.prototype.getAccessTokenUrl = function(code) {
+function getAccessTokenUrl(code) {
   var path = 'https://graph.facebook.com/oauth/access_token?';
   var queryParams = [
     'client_id=' + locomotive.set('facebook app id'),
-    'redirect_uri=' + encodeURIComponent('http://localhost:3000/'),
+    'redirect_uri=' + encodeURIComponent(locomotive.set('facebook redirect')),
     'client_secret=' + locomotive.set('facebook app secret'),
     'code=' + encodeURIComponent(code)
   ];
@@ -66,14 +71,24 @@ GraphClient.prototype.getAccessTokenUrl = function(code) {
   return url = path + query;
 }
 
-GraphClient.prototype.getFriendsUrl = function() {
-  return 'https://graph.facebook.com/me/friends?access_token='
-          + encodeURIComponent(this.access_token);
-}
+function auth(req, res, next) {
+    if (req.session.facebookToken)
+      return next();
+    var code = req.query.code;
+    if (!code)
+      return res.redirect(getDialogUrl());
 
-GraphClient.prototype.getLinksUrl = function(id) {
-  return 'https://graph.facebook.com/' + id + '/links?access_token='
-          + encodeURIComponent(this.access_token);
-}
+    promissedRequest(getAccessTokenUrl(code))
+    .then(function(body) {
+      req.session.facebookToken = querystring.parse(body);
+      next();
+    })
+    .fail(function(error) {
+      next(error);  
+    });
+  }
 
-module.exports = GraphClient;
+module.exports = {
+  Graph: GraphClient,
+  auth: auth
+}

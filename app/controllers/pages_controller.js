@@ -1,7 +1,9 @@
 var locomotive = require('locomotive')
   , Controller = locomotive.Controller
-  , GraphClient = require('../utils/graph-client.js')
-  , Q = require("q");
+  , Graph = require('../utils/graph-client.js').Graph
+  , Q = require('q')
+  , Person = require('../models/person.js')
+  , Link = require('../models/link.js');
 
 
 var kue = require('kue');
@@ -13,13 +15,23 @@ var jobs = kue.createQueue()
 
 var PagesController = new Controller();
 
+PagesController.test = function() {
+  var self = this;
+  self.title = 'thest';
+  getFriends(self.getToken());
 
-
+  self.render({
+    token: self.getToken()
+  });
+}
 
 PagesController.main = function() {
-  var a = locomotive;
   var self = this;
+
+
+  return;
   var code = this.req.query.code;
+
 
   if (!self.req.session.facebookToken && !code) {
       this.redirect((new GraphClient).getDialogUrl());
@@ -84,14 +96,8 @@ PagesController.getToken = function() {
   var self = this;
   if (self.req.session.facebookToken)
     return self.req.session.facebookToken.access_token;
-
-  return (new GraphClient).getAccessToken()
-    .then(function(result) {
-      self.req.session.facebookToken = result;
-      return result.access_token;
-    });
 }
-
+/*
 PagesController.getFriends = function() {
   friends.forEach(function(friend) {
     new Person({
@@ -102,13 +108,20 @@ PagesController.getFriends = function() {
     }).save();
   });
 }
+*/
+
+function getFriends(access_token) {
+  console.log('Creating getFriends job');
+  jobs.create('get friends', {
+      title: 'Getting friends'
+    , access_token: access_token
+    //, facebookId: facebookId
+  }).save();
+}
 
 
-
-
-
-function create(friend, access_token) {
-  console.log('Creating job for %s', friend.name);
+function getLinks(friend, access_token) {
+  console.log('Creating getLinks job for %s', friend.name);
   jobs.create('get links', {
       title: 'Getting links submitted by ' + friend.name
     , friendFacebookId: friend.id
@@ -118,11 +131,55 @@ function create(friend, access_token) {
   }).save();
 }
 
+jobs.process('get friends', 3, function(job, done) {
+  (new Graph(job.data.access_token))
+  .getFriends()
+  .then(function(friends) {
+    friends.forEach(function(friend) {
+      var model = new Person({
+        name: friend.name,
+        facebookId: friend.id,
+        queriedDate: new Date(),
+        links: []
+      }).save(function(error) {
+        if (error) {
+          console.log("Save to db failed");
+          return;
+        }
+        getLinks(friend, job.data.access_token);
+      });
+    });
+    done();
+  })
+  .fail(function(error) {
+    console.log('Error while getting friends');
+    console.log(error);
+    done(error);
+  })
+});
+
 jobs.process('get links', 3, function(job, done) {
-  PagesController.getLinks(job.data.friendFacebookId, job.data.access_token)
+  (new Graph(job.data.access_token)).getLinks(job.data.friendFacebookId)
   .then(function(links) {
     console.log('got %d links by %s', links.length, job.data.friendName);
-    done();
+    Person.update({
+      facebookId: job.data.friendFacebookId
+    }, {
+      $push: {
+        links: links.map(function(link) {
+          return new Link({
+            url: link.url,
+          });
+        })
+      }
+    }, {
+      multi: false
+    }, function(error, numAffected) {
+      console.log('in callback');
+      console.log(error);
+      console.log(numAffected);
+      done(error);
+    });
   })
   .fail(function(error) {
     console.log('Error while getting links by %s', job.data.friendName);

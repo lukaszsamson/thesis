@@ -6,7 +6,7 @@
     "locomotive": ">= 0.1.0",
     "mongoose": ">= 0",
     "locomotive-mongoose": ">= 0",
-    "express": ">= 2.4.7",
+    "express": "*",
     "ejs": ">= 0.4.3",
     "request": ">= 0",
     "q": ">= 0",
@@ -15,7 +15,7 @@
     "redis": ">= 0",
     "reds": ">= 0",
     "stylus": ">= 0",
-    "nib": ">= 0"
-
+    "nib": ">= 0",
+    "connect-auth": ">= 0"
   }
 }

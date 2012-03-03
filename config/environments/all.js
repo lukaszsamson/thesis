@@ -1,11 +1,13 @@
-var express = require('express');
-
+var express = require('express')
+  , auth = require('../../app/utils/graph-client.js').auth
+  ;
 
 module.exports = function() {
   this.set('views', __dirname + '/../../app/views');
   this.set('view engine', 'ejs');
   this.set('facebook app id', '102219526568766')
   this.set('facebook app secret', 'ee755ea1ef4ab900bb46b497d5a93ca0')
+  this.set('facebook redirect', 'http://localhost:3000/')
 
 
   this.use(express.cookieParser());
@@ -13,8 +15,10 @@ module.exports = function() {
 
   this.use(express.logger());
   this.use(express.bodyParser());
+  this.use(auth);
+
   this.use(this.router);
   this.use(express.static(__dirname + '/../../public'));
   this.datastore(require('locomotive-mongoose'));
-
+  
 }
