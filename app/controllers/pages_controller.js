@@ -17,11 +17,12 @@ var PagesController = new Controller();
 
 
 PagesController.main = function() {
+  var a = locomotive;
   var self = this;
   var code = this.req.query.code;
 
   if (!self.req.session.facebookToken && !code) {
-      this.redirect((new GraphClient)getDialogUrl());
+      this.redirect((new GraphClient).getDialogUrl());
     } else {
       var access_token = 
       Q.when((function() {

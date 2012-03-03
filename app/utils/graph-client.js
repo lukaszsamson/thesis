@@ -1,6 +1,7 @@
 var request = require('request')
   , querystring = require('querystring')
-  , Q = require("q");
+  , Q = require("q")
+  , locomotive = require('locomotive');
 
 
 function promissedRequest(url) {
@@ -45,7 +46,7 @@ GraphClient.prototype.getAccessToken = function(code) {
 GraphClient.prototype.getDialogUrl = function() {
   var path = 'https://www.facebook.com/dialog/oauth?';
   var queryParams = [
-    'client_id=' + APP_ID,
+    'client_id=' + locomotive.set('facebook app id'),
     'redirect_uri=' + encodeURIComponent('http://localhost:3000/'),
     'scope=' + 'read_stream',
   ];
@@ -56,9 +57,9 @@ GraphClient.prototype.getDialogUrl = function() {
 GraphClient.prototype.getAccessTokenUrl = function(code) {
   var path = 'https://graph.facebook.com/oauth/access_token?';
   var queryParams = [
-    'client_id=' + APP_ID,
+    'client_id=' + locomotive.set('facebook app id'),
     'redirect_uri=' + encodeURIComponent('http://localhost:3000/'),
-    'client_secret=' + APP_SECRET,
+    'client_secret=' + locomotive.set('facebook app secret'),
     'code=' + encodeURIComponent(code)
   ];
   var query = queryParams.join('&');
