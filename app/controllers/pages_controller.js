@@ -165,7 +165,7 @@ jobs.process('get links', 3, function(job, done) {
     Person.update({
       facebookId: job.data.friendFacebookId
     }, {
-      $push: {
+      $pushAll: {
         links: links.map(function(link) {
           return new Link({
             url: link.link,
