@@ -168,7 +168,8 @@ jobs.process('get links', 3, function(job, done) {
       $push: {
         links: links.map(function(link) {
           return new Link({
-            url: link.url,
+            url: link.link,
+            facebookId: link.id
           });
         })
       }

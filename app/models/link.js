@@ -1,11 +1,12 @@
 // The Link model
 
 var mongoose = require('mongoose')
-   ,Schema = mongoose.Schema
+  , Schema = mongoose.Schema
    //,ObjectId = Schema.ObjectId;
 
 var linkSchema = new Schema({
     date: {type: Date, default: Date.now},
+    facebookId: String,
     //author: {type: String, default: 'Anon'},
     url: String
 });
