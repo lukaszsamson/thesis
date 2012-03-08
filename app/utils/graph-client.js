@@ -36,10 +36,21 @@ GraphClient.prototype.getFriends = function() {
     return JSON.parse(body).data;
   });
 }
+GraphClient.prototype.getMutualFriends = function(facebookId) {
+  return promissedRequest(this.getMutualFriendsUrl(facebookId))
+  .then(function(body) {
+    return JSON.parse(body).data;
+  });
+}
  
 
 GraphClient.prototype.getFriendsUrl = function() {
   return 'https://graph.facebook.com/me/friends?access_token='
+          + encodeURIComponent(this.access_token);
+}
+
+GraphClient.prototype.getMutualFriendsUrl = function(facebookId) {
+  return 'https://graph.facebook.com/me/mutualfriends/' + encodeURIComponent(facebookId) + '?access_token='
           + encodeURIComponent(this.access_token);
 }
 

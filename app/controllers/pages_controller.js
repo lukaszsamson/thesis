@@ -3,7 +3,8 @@ var locomotive = require('locomotive')
   , Graph = require('../utils/graph-client.js').Graph
   , Q = require('q')
   , Person = require('../models/person.js')
-  , Link = require('../models/link.js');
+  , Link = require('../models/link.js')
+  , util = require('util');
 
 
 var kue = require('kue');
@@ -24,6 +25,15 @@ PagesController.test = function() {
     token: self.getToken()
   });
 }
+
+function NotFound(msg) {
+    Error.call(this);
+    Error.captureStackTrace(this, arguments.callee);
+    this.name = 'NotFound';
+    this.message = msg;
+}
+
+NotFound.prototype.__proto__ = Error.prototype;
 
 PagesController.main = function() {
   var self = this;
@@ -64,31 +74,28 @@ PagesController.main = function() {
 PagesController.friend = function() {
   var self = this;
   var facebookId = self.req.params.id;
-  (new GraphClient(self.getToken()))
-  .getLinks(facebookId)
-  .then(function(links) {
-    self.render({facebookId: facebookId, links: links});
-  })
-  .fail(function(error) {
-    self.error(error);
+  Person.findOne({
+    facebookId: facebookId
+  }, function(error, result) {
+    if (error)
+      return self.error(error);
+    if (!result)
+      return self.error(new NotFound(util.format('Friend with id %s does not exist', facebookId)));
+    self.render({
+      facebookId: facebookId,
+      links: result.links
+    });
   });
 }
 
 PagesController.friends = function() {
   var self = this;
-  (new GraphClient(self.getToken()))
-  .getFriends()
-  .then(function(friends) {
-    friends.forEach(function(friend) {
-          create(friend, self.getToken());
-    });
-
+  Person.find(function(error, result) {
+    if (error)
+      return self.error(error);
     self.render({
-      friends: friends
+      friends: result
     });
-  })
-  .fail(function(error) {
-    self.error(error);
   });
 }
 
@@ -119,6 +126,16 @@ function getFriends(access_token) {
   }).save();
 }
 
+function getMutualFriends(friend, access_token) {
+  console.log('Creating getMutualFriends job for %s', friend.name);
+  jobs.create('get mutual friends', {
+      title: 'Getting mutual friends of ' + friend.name
+    , friendFacebookId: friend.id
+    , friendName: friend.name
+    , access_token: access_token
+    //, facebookId: facebookId
+  }).save();
+}
 
 function getLinks(friend, access_token) {
   console.log('Creating getLinks job for %s', friend.name);
@@ -147,7 +164,36 @@ jobs.process('get friends', 3, function(job, done) {
           return;
         }
         getLinks(friend, job.data.access_token);
+        getMutualFriends(friend, job.data.access_token);
       });
+    });
+    done();
+  })
+  .fail(function(error) {
+    console.log('Error while getting friends');
+    console.log(error);
+    done(error);
+  })
+});
+
+jobs.process('get mutual friends', 3, function(job, done) {
+  (new Graph(job.data.access_token))
+  .getMutualFriends(job.data.friendFacebookId)
+  .then(function(friends) {
+    friends.forEach(function(friend) {
+      /*var model = new Person({
+        name: friend.name,
+        facebookId: friend.id,
+        queriedDate: new Date(),
+        links: []
+      }).save(function(error) {
+        if (error) {
+          console.log("Save to db failed");
+          return;
+        }
+        getLinks(friend, job.data.access_token);
+        getMutualFriends(friend, job.data.access_token);
+      });*/
     });
     done();
   })
