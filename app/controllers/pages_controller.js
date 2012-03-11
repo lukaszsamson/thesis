@@ -1,10 +1,11 @@
 var locomotive = require('locomotive'),
   Controller = locomotive.Controller,
   Graph = require('../utils/graph-client.js').Graph,
-  Q = require('q'),
   Person = require('../models/person.js'),
+  Friend = require('../models/friend.js'),
   Link = require('../models/link.js'),
-  util = require('util');
+  util = require('util'),
+  async = require('async');
 
 
 var kue = require('kue');
@@ -18,13 +19,12 @@ var PagesController = new Controller();
 PagesController.test = function () {
   var self = this;
   self.title = 'thest';
-  getFriends(function(e) {
-    if (e)
-      return self.error(e);
+  getMe(self.getToken(), function (e) {
+    if (e) return self.error(e);
     self.render({
       token: self.getToken()
     });
-  }, self.getToken());
+  });
 }
 
 function NotFound(msg) {
@@ -97,146 +97,154 @@ PagesController.getToken = function () {
   var self = this;
   if (self.req.session.facebookToken) return self.req.session.facebookToken.access_token;
 }
-/*
-PagesController.getFriends = function() {
-  friends.forEach(function(friend) {
-    new Person({
-      name: friend.name,
-      facebookId: friend.id,
-      queriedDate: new Date(),
-      links: null
-    }).save();
-  });
-}
-*/
 
-function getFriends(done, access_token) {
+function getMe(access_token, done) {
+  console.log('Creating getMe job');
+  jobs.create('get me', {
+    title: 'Getting me',
+    access_token: access_token
+  }).attempts(3).save(done);
+}
+
+function getFriend(me, friend, access_token, done) {
+  console.log('Creating getFriend job');
+  jobs.create('get friend', {
+    title: 'Getting friend ' + friend.name,
+    me: me,
+    friend: friend,
+    access_token: access_token
+  }).attempts(3).save(done);
+}
+
+function getFriends(me, access_token, done) {
   console.log('Creating getFriends job');
   jobs.create('get friends', {
     title: 'Getting friends',
+    me: me,
     access_token: access_token
-    //, facebookId: facebookId
   }).attempts(3).save(done);
 }
 
-function getMutualFriends(done, friend, access_token) {
+function getMutualFriends(friend, access_token, done) {
   console.log('Creating getMutualFriends job for %s', friend.name);
   jobs.create('get mutual friends', {
     title: 'Getting mutual friends of ' + friend.name,
-    friendFacebookId: friend.id,
-    friendName: friend.name,
+    friend: friend,
     access_token: access_token
-    //, facebookId: facebookId
   }).attempts(3).save(done);
 }
 
-function getLinks(done, friend, access_token) {
+function getMyLinks(me, access_token, done) {
+  console.log('Creating getLinks job for %s', me.name);
+  jobs.create('get my links', {
+    title: 'Getting links submitted by ' + me.name,
+    me: me,
+    access_token: access_token
+  }).attempts(3).save(done);
+}
+
+function getLinks(friend, access_token, done) {
   console.log('Creating getLinks job for %s', friend.name);
   jobs.create('get links', {
     title: 'Getting links submitted by ' + friend.name,
-    friendFacebookId: friend.id,
-    friendName: friend.name,
+    friend: friend,
     access_token: access_token
-    //, facebookId: facebookId
   }).attempts(3).save(done);
 }
 
-function saveOrUpdateFriend(done, friend, access_token) {
-  jobs.create('save or update friend', {
-    title: 'Saving or updating friend ' + friend.name,
-    friend: friend,
-    access_token: access_token
-  }).priority('high').attempts(3).save(done);
-}
 
-jobs.process('save or update friend', 3, function (job, done) {
-  var friend = job.data.friend;
-  Person.findOne({
-    facebookId: friend.id
-  }, function (error, result) {
-    if (error) return done(error);
-    if (!result) {
-      var model = new Person({
-        name: friend.name,
-        facebookId: friend.id,
-        queriedDate: new Date(),
-        links: []
-      }).save(function (error1) {
-        if (error1) {
-          return done(error1);
-        } else {
-          getLinks(function(e) {}, friend, job.data.access_token);
-          getMutualFriends(function(e) {}, friend, job.data.access_token);
-          done();
-        }
-      });
-    } else {
-      getLinks(friend, job.data.access_token);
-      getMutualFriends(friend, job.data.access_token);
-      done();
-    }
-  });
+jobs.process('get me', 3, function (job, done) {
+  async.waterfall([
+    function(c0) {
+      (new Graph(job.data.access_token)).getMe(c0);
+    },
+    function(me, c0) {
+      async.series([
+        function(c1) {
+          saveOrUpdatePerson(me, c1);
+        },
+        function(c1) {
+          async.parallel([
+            function (c2) {
+              getMyLinks(me, job.data.access_token, c2);
+            }, function (c2) {
+              getFriends(me, job.data.access_token, c2);
+            }], c1);
+        }], c0);
+    }], done);
+});
+
+jobs.process('get friend', 3, function (job, done) {
+  async.waterfall([
+    function(c0) {
+      (new Graph(job.data.access_token)).getFriend(job.data.friend.id, c0);
+    },
+    function(friend, c0) {
+      async.series([
+        function(c1) {
+          saveOrUpdateFriend(job.data.me, friend, c1);
+        },
+        function(c1) {
+          async.parallel([
+            function (c2) {
+              getLinks(friend, job.data.access_token, c2);
+            }, function (c2) {
+              getMutualFriends(friend, job.data.access_token, c2);
+            }], c1);
+        }], c0);
+    }], done);
 });
 
 jobs.process('get friends', 3, function (job, done) {
-  (new Graph(job.data.access_token)).getFriends().then(function (friends) {
-    friends.forEach(function (friend) {
-      saveOrUpdateFriend(friend, job.data.access_token)
-    });
-    done();
-  }).fail(function (error) {
-    done(error);
-  });
+  async.waterfall([
+    function(c0) {
+      (new Graph(job.data.access_token)).getFriends(c0);
+    },
+    function(friends, c0) {
+      async.series([
+        function(c1) {
+          updateFrineds(job.data.me.id, friends, c1);
+        },
+        function(c1) {
+          async.forEach(friends, function (friend, c2) {
+            getFriend(job.data.me, friend, job.data.access_token, c2);
+          }, c1);
+        }], c0);
+    }], done);
 });
 
 jobs.process('get mutual friends', 3, function (job, done) {
-  (new Graph(job.data.access_token)).getMutualFriends(job.data.friendFacebookId).then(function (friends) {
-    friends.forEach(function (friend) {
-      /*var model = new Person({
-        name: friend.name,
-        facebookId: friend.id,
-        queriedDate: new Date(),
-        links: []
-      }).save(function(error) {
-        if (error) {
-          console.log("Save to db failed");
-          return;
-        }
-        getLinks(friend, job.data.access_token);
-        getMutualFriends(friend, job.data.access_token);
-      });*/
-    });
-    done();
-  }).fail(function (error) {
-    done(error);
-  })
+  async.waterfall([
+    function(c0) {
+      (new Graph(job.data.access_token)).getMutualFriends(job.data.friend.id, c0);
+    },
+    function(mutualFriends, c0) {
+      updateMutualFrineds(job.data.friend.id, mutualFriends, c0);
+    }], done);
+});
+
+jobs.process('get my links', 3, function (job, done) {
+  async.waterfall([
+    function (c0) {
+      (new Graph(job.data.access_token)).getLinks(job.data.me.id, c0);
+    },
+    function (links, c0) {
+      updatePersonLinks(job.data.me.id, links, c0);
+    }], done);
 });
 
 jobs.process('get links', 3, function (job, done) {
-  (new Graph(job.data.access_token)).getLinks(job.data.friendFacebookId).then(function (links) {
-    console.log('got %d links by %s', links.length, job.data.friendName);
-    Person.update({
-      facebookId: job.data.friendFacebookId
-    }, {
-      $pushAll: {
-        links: links.map(function (link) {
-          return new Link({
-            url: link.link,
-            facebookId: link.id
-          });
-        })
-      }
-    }, {
-      multi: false
-    }, function (error, numAffected) {
-      done(error);
-    });
-  }).fail(function (error) {
-    done(error);
-  });
+  async.waterfall([
+    function (c0) {
+      (new Graph(job.data.access_token)).getLinks(job.data.friend.id, c0);
+    },
+    function (links, c0) {
+      updateFriendLinks(job.data.friend.id, links, c0);
+    }], done);
 });
 
 jobs.on('job complete', function (id) {
+  return;
   Job.get(id, function (err, job) {
     if (err) {
       console.log('Error while getting job #%d', job.id);
@@ -249,96 +257,125 @@ jobs.on('job complete', function (id) {
         console.log(err);
         return;
       }
-      console.log('removed completed job #%d', job.id);
+      //console.log('removed completed job #%d', job.id);
     });
   });
 });
 
-// PagesController.main = function() {
-//   var self = this;
-//   //if (!this.req.session.facebookToken) {//TODO expires
-//     var code = this.req.query.code;
-//     if (!code) {
-//       this.redirect(getDialogUrl());
-//     } else {
-//     async.waterfall([
-//       function(callback) {
-//         request(getAccessTokenUrl(code), function (error, response, body) {
-//           if (error) {
-//             callback(error);
-//           } else if (response.statusCode != 200) {
-//             callback({code: response.statusCode, body: body});
-//           } else {
-//             console.log(body);
-//             var result = self.req.session.facebookToken = querystring.parse(body);
-//             callback(null, result.access_token);
-//           }
-//         });
-//       },
-//       function(token, callback) {
-//         request(getFriendsUrl(token), function (error, response, body) {
-//           if (error) {
-//             callback(error);
-//           } else if (response.statusCode != 200) {
-//             callback({code: response.statusCode, body: body});
-//           } else {
-//             callback(null, JSON.parse(body).data)
-//           }
-//         });        
-//       }
-//       ]
-//     , function(error, results) {
-//       if (error) {
-//         console.log(error);
-//         throw error;
-//       } else {
-//         self.title = 'Locomotive';
-//         self.render({
-//           friends: results
-//         });
-//       }
-//     });
-// }
-// };
 
-/*    var path = 'https://graph.facebook.com/oauth/access_token?';
-    var queryParams = [
-      'client_id=' + APP_ID,
-      'redirect_uri=' + encodeURIComponent('http://localhost:3000/'),
-      'client_secret=' + APP_SECRET,
-      'code=' + encodeURIComponent(code)
-    ];
-    var query = queryParams.join('&');
-    var url = path + query;
-    console.log(url);
-    request(url, function (error, response, body) {
-      if (!error && response.statusCode == 200) {
-        console.log(body);
-        self.req.session.facebookToken = querystring.parse(body);
-
-
-        request('https://graph.facebook.com/me/friends?access_token='
-          + encodeURIComponent(self.req.session.facebookToken.access_token), function (error1, response1, body1) {
-          if (!error1 && response1.statusCode == 200) {
-            self.title = 'Locomotive';
-            self.render({
-              friends: JSON.parse(body1).data
-            });
-          }
-        });
-      }
-    });
-  } else {
-  request('https://graph.facebook.com/me/friends?access_token='
-          + encodeURIComponent(self.req.session.facebookToken.access_token), function (error1, response1, body1) {
-          if (!error1 && response1.statusCode == 200) {
-            self.title = 'Locomotive';
-            self.render({
-              friends: JSON.parse(body1).data
-            });
-          }
-        });
+function saveOrUpdateFriend(me, friend, done) {
+  Friend.findOne({
+    facebookId: friend.id
+  }, function (error, result) {
+    if (error) return done(error);
+    if (!result) {
+      var model = new Friend({
+        name: friend.name,
+        facebookId: friend.id,
+        ownerFacebookId: me.id,
+        updatedDate: new Date(),
+        links: [],
+        mutualFriends: []
+      }).save(done);
+    } else {
+      result.name = friend.name;
+      result.updatedDate = new Date();
+      result.links = [];
+      result.mutualFriends = [];
+      result.save(done);
+    }
+  });
 }
-*/
-//}
+
+
+function saveOrUpdatePerson(me, done) {
+  Person.findOne({
+    facebookId: me.id
+  }, function (error, person) {
+    if (error) return done(error);
+    if (!person) {
+      var model = new Person({
+        name: me.name,
+        facebookId: me.id,
+        updatedDate: new Date(),
+        links: [],
+        friends: []
+      }).save(done);
+    } else {
+      person.name = me.name;
+      person.updatedDate = new Date();
+      person.links = [];
+      person.friends = [];
+      person.save(done);
+    }
+  });
+}
+
+function updatePersonLinks(id, links, done) {
+  Person.update({
+      facebookId: id
+    }, {
+      $pushAll: {
+        links: links.map(function (link) {
+          return new Link({
+            url: link.link,
+            facebookId: link.id
+          });
+        })
+      }
+    }, {
+      multi: false
+    }, done);
+}
+
+function updateFriendLinks(id, links, done) {
+  Friend.update({
+      facebookId: id
+    }, {
+      $pushAll: {
+        links: links.map(function (link) {
+          return new Link({
+            url: link.link,
+            facebookId: link.id
+          });
+        })
+      }
+    }, {
+      multi: false
+    }, done);
+}
+
+function updateFrineds(id, friends, done) {
+  Person.update({
+      facebookId: id,
+    }, {
+      $set: {
+      friends: friends.map(function(friend) {
+        return {
+          facebookId: friend.id,
+          name: friend.name
+        };
+      })
+    }}, {
+      multi: false
+    }, done);
+}
+
+function updateMutualFrineds(id, mutualFriends, done) {
+  Friend.update({
+      facebookId: id,
+    }, {
+      $set: {
+      mutualFriends: mutualFriends.map(function(mutualFriend) {
+        return {
+          facebookId: mutualFriend.id,
+          name: mutualFriend.name
+        };
+      })
+    }}, {
+      multi: false
+    }, done);
+}
+
+
 module.exports = PagesController;

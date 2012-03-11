@@ -1,16 +1,17 @@
-// The Person model
+// The Friend model
 
 var mongoose = require('mongoose')
   , Schema = mongoose.Schema
   , FriendInfo = require('./friend-info.js')
   , Link = require('./link.js');
- 
-var personSchema = new Schema({
+  
+var friendSchema = new Schema({
     name:  String,
     facebookId: String,
+    ownerFacebookId: String,
     updatedDate: Date,
     links: [Link.schema],
-    friends: [FriendInfo.schema]
+    mutualFriends: [FriendInfo.schema],
 });
 
-module.exports = mongoose.model('Person', personSchema);
+module.exports = mongoose.model('Friend', friendSchema);
