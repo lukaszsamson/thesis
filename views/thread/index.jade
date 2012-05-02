@@ -1,0 +1,33 @@
+extends ../layout
+
+//mixin threadInfo(thread)
+//  li #{thread.title} by
+//    span= thread.author
+
+block content
+  h1 Threads
+  ul.thread-list
+    - each thread in threads
+      li <a href="threads/#{thread.id}">#{thread.title}</a> by <span>#{thread.author}</span>
+      //mixin threadInfo(thread)
+  form(action="threads", method="post")
+    table
+      tr
+        th
+          label(for="title") Title:
+        td
+          input(type="text", name="title", required, id="title")
+      tr
+        th
+          label(for="body") Text:
+        td
+          textarea(name="body", required, id="body")
+      tr
+        th
+          label(for="author") Author:
+        td
+          input(type="text", name="author", id="author")
+      tr
+        th
+        td
+          input(type="submit", value="Go")
