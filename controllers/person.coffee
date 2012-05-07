@@ -183,7 +183,7 @@ jobs.process 'get links', 3, (job, done) ->
     (c0) -> (new Graph(job.data.access_token)).getLinks job.data.friend.id, c0
   , (links, c0) -> async.series [
       (c1) -> updateFriendLinks job.data.friend.id, links, c1
-    , (c1) -> async.forEach links, ((link, c2) -> scrapLink link.link, c2), c1
+    #, (c1) -> async.forEach links, ((link, c2) -> scrapLink link.link, c2), c1
     ], c0
   ], done
 
