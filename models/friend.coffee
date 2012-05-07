@@ -13,13 +13,12 @@ friendSchema = new Schema
 
 
 m = () ->
-  self = this;
-  this.links.forEach (link) ->
+  @links.forEach (link) ->
     emit(link.url, {
       count: 1,
       ids: [{
-        id: self.facebookId
-      , mutualFriends: self.mutualFriends.map (mutualFriend) -> mutualFriend.facebookId
+        id: @facebookId
+      , mutualFriends: @mutualFriends.map (mutualFriend) -> mutualFriend.facebookId
       }]
     })
 
@@ -30,10 +29,9 @@ r = (key, values) ->
     ids = ids.concat value.ids
     cnt += i.count
   return {
-    count: cnt,
+    count: cnt
     ids: ids
   }
-
 
 f = (key, value) ->
   value.ids.forEach (id) ->
