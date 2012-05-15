@@ -22,7 +22,7 @@ app.use express.bodyParser()
 app.use (require './utils/graph-client').facebookAuth
   appId: '102219526568766'
   appSecret: 'ee755ea1ef4ab900bb46b497d5a93ca0'
-  redirectUri: 'http://localhost:3000/'
+  redirectUri: 'http://localhost:3000/person'
   scope: 'read_stream'
 
 app.get '/', (req, resp) ->
@@ -30,13 +30,11 @@ app.get '/', (req, resp) ->
 
 test = require './controllers/test'
 app.get '/test/', test.index
-thread = require './controllers/thread'
-app.get '/threads', thread.index
-app.post '/threads', thread.create
-app.get '/threads/:id', thread.show
 
 person = require './controllers/person'
-app.get '/person', person.test
+app.get '/person', person.index
+app.get '/person/startCountLinks', person.countLinks
+app.get '/person/countLinks', person.getCountLinks
 app.use express.static __dirname + '/public'
 app.use express.errorHandler
   dumpExceptions: true

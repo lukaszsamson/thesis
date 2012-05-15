@@ -1,6 +1,5 @@
 Graph = require('../utils/graph-client').Graph
 Person = require '../models/person'
-Friend = require '../models/friend'
 Link = require '../models/link'
 Document = require '../models/document'
 util = require 'util'
@@ -12,10 +11,20 @@ kue = require 'kue'
 jobs = kue.createQueue()
 Job = kue.Job;
 
+exports.countLinks = (req, res, next) ->
+  countLinks (e) ->
+    return next(e) if e
+    res.send 200
 
-exports.test = (req, res) ->
-  getMe getToken(req), (e) ->
-    return res.error e if e
+exports.getCountLinks = (req, res, next) ->
+  Person.getCountMutualLinks (e, links) ->
+    return next(e) if e
+    res.json(JSON.stringify(links))
+
+
+exports.index = (req, res) ->
+  getAppUser getToken(req), (e) ->
+    return next(e) if e
     res.render
       token: getToken req
 ###
@@ -52,64 +61,23 @@ getToken = (req) ->
   return req.session.facebookToken.access_token if req.session.facebookToken
 
 
-getMe = (access_token, done) ->
-  console.log 'Creating getMe job'
-  jobs.create 'get me',
-    title: 'Getting me'
-    access_token: access_token
-  .attempts(3)
-  .save done
+
+countLinks = (done) ->
+  console.log 'Creating countLinks job'
+  jobs.create('gcountLinksd', {
+    title: 'Counting links'
+  }).save done
+
+jobs.process 'countLinks', 3, (job, done) ->
+  Person.countMutualLinks(done)
 
 
-getFriend = (me, friend, access_token, done) ->
-  console.log 'Creating getFriend job'
-  jobs.create 'get friend',
-    title: 'Getting friend ' + friend.name
-    me: me
-    friend: friend
-    access_token: access_token
-  .attempts(3)
-  .save done
 
 
-getFriends = (me, access_token, done) ->
-  console.log 'Creating getFriends job'
-  jobs.create 'get friends',
-    title: 'Getting friends'
-    me: me
-    access_token: access_token
-  .attempts(3)
-  .save done
 
 
-getMutualFriends = (friend, access_token, done) ->
-  console.log 'Creating getMutualFriends job for %s', friend.name
-  jobs.create('get mutual friends',
-    title: 'Getting mutual friends of ' + friend.name
-    friend: friend
-    access_token: access_token
-  ).attempts(3)
-  .save done
 
 
-getMyLinks = (me, access_token, done) ->
-  console.log 'Creating getLinks job for %s', me.name
-  jobs.create('get my links',
-    title: 'Getting links submitted by ' + me.name
-    me: me
-    access_token: access_token
-  ).attempts(3)
-  .save done
-
-
-getLinks = (friend, access_token, done) ->
-  console.log 'Creating getLinks job for %s', friend.name
-  jobs.create('get links',
-    title: 'Getting links submitted by ' + friend.name
-    friend: friend
-    access_token: access_token
-  ).attempts(3)
-  .save done
 
 scrapLink = (url, done) ->
   console.log 'Creating scrapLink job for %s', url
@@ -129,67 +97,108 @@ jobs.process 'scrap link', 3, (job, done) ->
     }, c0 if document else c0()
   ], done
 
-jobs.process 'get me', 3, (job, done) ->
+getAppUser = (access_token, done) ->
+  console.log 'Creating getAppUser job'
+  jobs.create 'getAppUser',
+    title: 'Getting app user'
+    access_token: access_token
+  .attempts(3)
+  .save done
+
+jobs.process 'getAppUser', 3, (job, done) ->
   async.waterfall [
-    (c0) -> (new Graph(job.data.access_token)).getMe c0
-  , (me, c0) -> async.series [
-      (c1) -> saveOrUpdatePerson me, c1
+    (c0) -> (new Graph(job.data.access_token)).getAppUser c0
+  , (appUser, c0) -> async.series [
+      (c1) -> saveOrUpdatePerson appUser, c1
     , (c1) -> async.parallel [
-        (c2) -> getMyLinks me, job.data.access_token, c2
-      , (c2) -> getFriends me, job.data.access_token, c2
+        (c2) -> getLinks appUser, job.data.access_token, c2
+      , (c2) -> getFriends appUser, job.data.access_token, c2
       ], c1
     ], c0
   ], done
 
+getFriend = (appUser, friend, access_token, done) ->
+  console.log 'Creating getFriend job'
+  jobs.create 'getFriend',
+    title: 'Getting friend ' + friend.name
+    appUser: appUser
+    friend: friend
+    access_token: access_token
+  .attempts(3)
+  .save done
 
-jobs.process 'get friend', 3, (job, done) ->
+
+jobs.process 'getFriend', 3, (job, done) ->
   async.waterfall [
     (c0) -> (new Graph(job.data.access_token)).getFriend job.data.friend.id, c0
   , (friend, c0) -> async.series [
-      (c1) -> saveOrUpdateFriend job.data.me, friend, c1
+      (c1) -> saveOrUpdateFriend job.data.appUser, friend, c1
     , (c1) -> async.parallel [
         (c2) -> getLinks friend, job.data.access_token, c2
-      , (c2) -> getMutualFriends friend, job.data.access_token, c2
+      , (c2) -> getMutualFriends job.data.appUser, friend, job.data.access_token, c2
       ], c1
     ], c0
   ], done
 
 
-jobs.process 'get friends', 3, (job, done) ->
+getFriends = (appUser, access_token, done) ->
+  console.log 'Creating getFriends job'
+  jobs.create 'getFriends',
+    title: 'Getting friends'
+    appUser: appUser
+    access_token: access_token
+  .attempts(3)
+  .save done
+
+jobs.process 'getFriends', 3, (job, done) ->
   async.waterfall [
     (c0) -> (new Graph(job.data.access_token)).getFriends c0
   , (friends, c0) -> async.series [
-      (c1) -> updateFrineds job.data.me.id, friends, c1
-    , (c1) -> async.forEach friends, ((friend, c2) -> getFriend job.data.me, friend, job.data.access_token, c2), c1
+      (c1) -> updateFrineds job.data.appUser.id, friends, c1
+    , (c1) -> async.forEach friends, ((friend, c2) ->
+        getFriend job.data.appUser, friend, job.data.access_token, c2
+      ), c1
     ], c0
   ], done
 
-jobs.process 'get mutual friends', 3, (job, done) ->
+getMutualFriends = (person, friend, access_token, done) ->
+  console.log 'Creating getMutualFriends job for %s', friend.name
+  jobs.create('getMutualFriends',
+    title: 'Getting mutual friends of ' + friend.name
+    person: person
+    friend: friend
+    access_token: access_token
+  ).attempts(3)
+  .save done
+
+jobs.process 'getMutualFriends', 3, (job, done) ->
   async.waterfall [
     (c0) -> (new Graph(job.data.access_token)).getMutualFriends job.data.friend.id, c0
-  , (mutualFriends, c0) -> updateMutualFrineds job.data.friend.id, mutualFriends, c0
+  , (mutualFriends, c0) -> updateMutualFrineds job.data.person.id, job.data.friend.id, mutualFriends, c0
   ], done
 
 
-jobs.process 'get my links', 3, (job, done) ->
-  async.waterfall [
-    (c0) -> (new Graph(job.data.access_token)).getLinks job.data.me.id, c0
-  , (links, c0) -> updatePersonLinks job.data.me.id, links, c0
-  ], done
+getLinks = (person, access_token, done) ->
+  console.log 'Creating getLinks job for %s', person.name
+  jobs.create('getLinks',
+    title: 'Getting links submitted by ' + person.name
+    person: person
+    access_token: access_token
+  ).attempts(3)
+  .save done
 
-
-jobs.process 'get links', 3, (job, done) ->
+jobs.process 'getLinks', 3, (job, done) ->
   async.waterfall [
-    (c0) -> (new Graph(job.data.access_token)).getLinks job.data.friend.id, c0
+    (c0) -> (new Graph(job.data.access_token)).getLinks job.data.person.id, c0
   , (links, c0) -> async.series [
-      (c1) -> updateFriendLinks job.data.friend.id, links, c1
+      (c1) -> updatePersonLinks job.data.person.id, links, c1
     #, (c1) -> async.forEach links, ((link, c2) -> scrapLink link.link, c2), c1
     ], c0
   ], done
 
 
 jobs.on 'job complete', (id) ->
-  return
+  #return
   Job.get id, (err, job) ->
     if err
       console.log 'Error while getting job #%d', job.id
@@ -203,24 +212,20 @@ jobs.on 'job complete', (id) ->
 
 
 saveOrUpdateFriend = (me, friend, done) ->
-  Friend.findOne {
+  Person.findOne {
     facebookId: friend.id
   }, (error, result) ->
     return done(error) if error
     if not result
-      new Friend
+      new Person
         name: friend.name
         facebookId: friend.id
-        ownerFacebookId: me.id
+        isAppClient: false
         updatedDate: new Date
-        links: []
-        mutualFriends: []
       .save done
     else
       result.name = friend.name
       result.updatedDate = new Date
-      result.links = []
-      result.mutualFriends = []
       result.save done
 
 
@@ -233,15 +238,13 @@ saveOrUpdatePerson = (person, done) ->
       new Person
         name: person.name
         facebookId: person.id
+        isAppClient: true
         updatedDate: new Date
-        links: []
-        friends: []
       .save done
     else
       result.name = person.name
       result.updatedDate = new Date
-      result.links = []
-      result.friends = []
+      result.isAppClient = true
       result.save done
 
 
@@ -249,7 +252,8 @@ updatePersonLinks = (id, links, done) ->
   Person.update {
       facebookId: id
     }, {
-      $pushAll: {
+      $set: {
+        lunksUpdatedDate: new Date
         links: links.map (link) ->
           new Link
             url: link.link,
@@ -260,47 +264,36 @@ updatePersonLinks = (id, links, done) ->
     }, done
 
 
-updateFriendLinks = (id, links, done) ->
-  Friend.update {
-      facebookId: id
-    }, {
-      $pushAll: {
-        links: links.map (link) ->
-          new Link
-            url: link.link,
-            facebookId: link.id
-      }
-    }, {
-      multi: false
-    }, done
-
-updateFrineds = (id, friends, done) ->
+updateFrineds = (personId, friends, done) ->
   Person.update {
-      facebookId: id,
+      facebookId: personId,
     }, {
       $set: {
-      friends: friends.map (friend) ->
-        facebookId: friend.id,
-        name: friend.name
+        friendsUpdatedDate: new Date
+        friends: friends.map (friend) ->
+          facebookId: friend.id,
+          name: friend.name
       }
     }, {
       multi: false
     }, done
 
 
-updateMutualFrineds = (id, mutualFriends, done) ->
-  Friend.update {
-      facebookId: id,
+updateMutualFrineds = (personId, friendId, mutualFriends, done) ->
+  Person.update {
+      facebookId: personId,
+      'friends.facebookId': friendId,
     }, {
       $set: {
-      mutualFriends: mutualFriends.map (mutualFriend) ->
-        facebookId: mutualFriend.id,
-        name: mutualFriend.name
+        'friends.$.mutualFriendsUpdatedDate': new Date
+        'friends.$.mutualFriends': mutualFriends.map (mutualFriend) ->
+          facebookId: mutualFriend.id,
+          name: mutualFriend.name
       }
     }, {
       multi: false
     }, done
-
+###
 saveOrUpdateDocument = (document, done) ->
   Document.findOne {
   url: document.url
@@ -316,3 +309,4 @@ saveOrUpdateDocument = (document, done) ->
       result.content = document.content
       result.updatedDate = new Date
       result.save done
+###

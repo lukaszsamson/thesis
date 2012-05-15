@@ -4,9 +4,6 @@ Schema = mongoose.Schema
 
 
 linkSchema = new Schema
-  updatedDate:
-      type: Date
-      default: Date.now
   facebookId: String
   url: String
 

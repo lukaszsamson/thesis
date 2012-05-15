@@ -13,8 +13,8 @@ class GraphClient
       catch e
         callback e
 
-  getMe: (callback) ->
-    request @getMeUrl(), (error, body) ->
+  getAppUser: (callback) ->
+    request @getAppUserUrl(), (error, body) ->
       return callback error if error
       try
         me = JSON.parse(body);
@@ -49,7 +49,7 @@ class GraphClient
       catch e
         return callback e
 
-  getMeUrl: ->
+  getAppUserUrl: ->
     'https://graph.facebook.com/me?access_token=' + encodeURIComponent @access_token
 
   getFriendUrl: (id) ->
