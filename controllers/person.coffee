@@ -211,9 +211,22 @@ jobs.on 'job complete', (id) ->
         return
 
 
-saveOrUpdateFriend = (me, friend, done) ->
+updateFriend = (me, friend, done) ->
+  Person.update {
+    facebookId: me.id,
+    'friends.facebookId': friend.id,
+  }, {
+    $set: {
+      'friends.$.mutualFriendsUpdatedDate': new Date
+      'friends.$.mutualFriends':
+    }
+  }, {
+    multi: false
+  }, done
+
+###
   Person.findOne {
-    facebookId: friend.id
+    facebookId: me.id
   }, (error, result) ->
     return done(error) if error
     if not result
@@ -227,7 +240,7 @@ saveOrUpdateFriend = (me, friend, done) ->
       result.name = friend.name
       result.updatedDate = new Date
       result.save done
-
+###
 
 saveOrUpdatePerson = (person, done) ->
   Person.findOne {

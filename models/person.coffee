@@ -1,7 +1,7 @@
 
 mongoose = require 'mongoose'
 Schema = mongoose.Schema
-FriendInfo = require './friend-info'
+Friend = require './friend'
 Link = require './link'
 
 personSchema = new Schema
@@ -11,7 +11,7 @@ personSchema = new Schema
   updatedDate: Date
   links: [Link.schema]
   linksUpdatedDate: Date
-  friends: [FriendInfo.schema]
+  friends: [Friend.schema]
   friendsUpdatedDate: Date
 
 
