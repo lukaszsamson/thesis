@@ -220,7 +220,7 @@ saveOrUpdateFriend = (me, friend, done) ->
       new Person
         name: friend.name
         facebookId: friend.id
-        isAppClient: false
+        isAppUser: false
         updatedDate: new Date
       .save done
     else
@@ -238,13 +238,13 @@ saveOrUpdatePerson = (person, done) ->
       new Person
         name: person.name
         facebookId: person.id
-        isAppClient: true
+        isAppUser: true
         updatedDate: new Date
       .save done
     else
       result.name = person.name
       result.updatedDate = new Date
-      result.isAppClient = true
+      result.isAppUser = true
       result.save done
 
 

@@ -19,18 +19,19 @@ m = () ->
   @links.forEach (link) ->
     emit(link.url, {
       count: 1,
-      ids: [{
-        id: @facebookId
-      , mutualFriends: @mutualFriends.map (mutualFriend) -> mutualFriend.facebookId
-      }]
+      id: @facebookId
+    })
+  if @isAppUser
+    emit(@facebookId, {
+      friends: @friends
     })
 
 r = (key, values) ->
   ids = []
   cnt = 0
   values.forEach (value) ->
-    ids = ids.concat value.ids
-    cnt += i.count
+    ids = ids.push value.id
+    cnt += value.count
   return {
     count: cnt
     ids: ids
@@ -40,8 +41,7 @@ f = (key, value) ->
   value.ids.forEach (id) ->
     cnt = 0
     id.mutualFriends.forEach (mutualFriend) ->
-      #TODO for should be faster
-      if value.ids.filter((id1) -> mutualFriend == id1.id).length != 0
+      if value.ids.some (id1) -> mutualFriend == id1.id
         ++cnt
     id.mutualCount = cnt;
     #NaN if 0
