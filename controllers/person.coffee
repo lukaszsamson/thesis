@@ -210,23 +210,10 @@ jobs.on 'job complete', (id) ->
         console.log err
         return
 
-
+#TODO upsert?
 updateFriend = (me, friend, done) ->
-  Person.update {
-    facebookId: me.id,
-    'friends.facebookId': friend.id,
-  }, {
-    $set: {
-      'friends.$.mutualFriendsUpdatedDate': new Date
-      'friends.$.mutualFriends':
-    }
-  }, {
-    multi: false
-  }, done
-
-###
   Person.findOne {
-    facebookId: me.id
+    facebookId: friend.id
   }, (error, result) ->
     return done(error) if error
     if not result
@@ -235,13 +222,23 @@ updateFriend = (me, friend, done) ->
         facebookId: friend.id
         isAppUser: false
         updatedDate: new Date
+        friends: [{
+          facebookId: me.id,
+          name: me.name
+        }]
       .save done
     else
       result.name = friend.name
       result.updatedDate = new Date
+      #TODO add to set
+      #TODO update changed name
+      result.friends.push({
+        facebookId: me.id,
+        name: me.name
+      }) unless result.friends.some((i) -> i.facebookId == me.id)
       result.save done
-###
 
+#TODO upsert?
 saveOrUpdatePerson = (person, done) ->
   Person.findOne {
     facebookId: person.id
@@ -291,7 +288,23 @@ updateFrineds = (personId, friends, done) ->
       multi: false
     }, done
 
+#TODO handle no longer friends
+updateMutualFrineds = (person, friend, mutualFriends, done) ->
+  Person.update {
+    facebookId: friend.id,
+  }, {
+  $addToSet: {
+    friends: {
+      $each: mutualFriends.map (mutualFriend) ->
+        facebookId: mutualFriend.id,
+        name: mutualFriend.name
+    }
+  }
+  }, {
+  multi: false
+  }, done
 
+###
 updateMutualFrineds = (personId, friendId, mutualFriends, done) ->
   Person.update {
       facebookId: personId,
@@ -306,6 +319,7 @@ updateMutualFrineds = (personId, friendId, mutualFriends, done) ->
     }, {
       multi: false
     }, done
+###
 ###
 saveOrUpdateDocument = (document, done) ->
   Document.findOne {
