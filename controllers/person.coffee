@@ -211,7 +211,7 @@ jobs.on 'job complete', (id) ->
         return
 
 #TODO upsert?
-updateFriend = (me, friend, done) ->
+saveOrUpdateFriend = (me, friend, done) ->
   Person.findOne {
     facebookId: friend.id
   }, (error, result) ->
@@ -263,7 +263,7 @@ updatePersonLinks = (id, links, done) ->
       facebookId: id
     }, {
       $set: {
-        lunksUpdatedDate: new Date
+        linksUpdatedDate: new Date
         links: links.map (link) ->
           new Link
             url: link.link,
@@ -289,6 +289,7 @@ updateFrineds = (personId, friends, done) ->
     }, done
 
 #TODO handle no longer friends
+#non funkciona
 updateMutualFrineds = (person, friend, mutualFriends, done) ->
   Person.update {
     facebookId: friend.id,

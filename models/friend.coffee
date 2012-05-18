@@ -7,8 +7,11 @@ friendSchema = new Schema
     facebookId: String
     links: [Link.schema]
     linksUpdatedDate: Date
-    mutualFriendsUpdatedDate: Date
-    mutualFriends: [friendInfoSchema]
+    #mutualFriendsUpdatedDate: Date
+    friends: [{
+      name: String
+      facebookId: String
+    }]
 
 
 module.exports = mongoose.model 'Friend', friendSchema

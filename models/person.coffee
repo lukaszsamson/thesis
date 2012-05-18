@@ -11,41 +11,44 @@ personSchema = new Schema
   updatedDate: Date
   links: [Link.schema]
   linksUpdatedDate: Date
-  friends: [Friend.schema]
+  friends: [{
+    facebookId: String
+    name:  String
+  }]
   friendsUpdatedDate: Date
 
 
 m = () ->
   @links.forEach (link) ->
     emit(link.url, {
-      count: 1,
-      id: @facebookId
-    })
-  if @isAppUser
-    emit(@facebookId, {
-      friends: @friends
+      count: 1
+      sharedBy: [{
+        id: @facebookId
+        friends: @friends
+        isAppUser: @isAppUser
+      }]
     })
 
 r = (key, values) ->
-  ids = []
-  cnt = 0
+  sharedBy = []
+  count = 0
   values.forEach (value) ->
-    ids = ids.push value.id
-    cnt += value.count
+    sharedBy = sharedBy.concat value.sharedBy
+    count += value.count
   return {
-    count: cnt
-    ids: ids
+    count: count
+    sharedBy: sharedBy
   }
 
 f = (key, value) ->
-  value.ids.forEach (id) ->
+  value.sharedBy.forEach (person) ->
     cnt = 0
-    id.mutualFriends.forEach (mutualFriend) ->
-      if value.ids.some (id1) -> mutualFriend == id1.id
+    person.friends.forEach (friend) ->
+      if (value.sharedBy.some (person1) -> friend.id == person1.id)
         ++cnt
-    id.mutualCount = cnt;
+    person.mutualCount = cnt;
     #NaN if 0
-    id.mutualPercent = 100 * cnt / id.mutualFriends.length
+    person.mutualPercent = 100 * cnt / person.friends.length
 
   return value
 
