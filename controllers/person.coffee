@@ -11,6 +11,12 @@ kue = require 'kue'
 jobs = kue.createQueue()
 Job = kue.Job;
 
+exports.logOutFromFacebook = (req, res) ->
+  delete req.session.facebookToken
+
+exports.deleteFacebookData = (req, res) ->
+  delete req.session.facebookToken
+
 exports.countLinks = (req, res, next) ->
   countLinks (e) ->
     return next(e) if e

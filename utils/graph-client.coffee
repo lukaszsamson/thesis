@@ -65,8 +65,10 @@ class GraphClient
     'https://graph.facebook.com/' + encodeURIComponent(facebookId) + '/links?access_token=' + encodeURIComponent @access_token
 
 
+  getlogOutUrl: (redirectUrl) ->
+    'https://www.facebook.com/logout.php?next=' + encodeURIComponent(redirectUrl) + '&access_token=' + encodeURIComponent @access_token
 
-
+#TODO csrf by state param
 facebookAuth = (config) ->
   getDialogUrl = (appId, redirectUri, scope) ->
     path = 'https://www.facebook.com/dialog/oauth?'
@@ -81,7 +83,7 @@ facebookAuth = (config) ->
     path + query;
 
   auth = (req, res, next) ->
-    if req.session.facebookToken
+    if req.session.facebookToken and req.session.facebookToken.expiresDate < new Date
       return next()
     code = req.query.code
     if not code
@@ -91,6 +93,9 @@ facebookAuth = (config) ->
       return next error if error
       try
         req.session.facebookToken = querystring.parse body
+        d = new Date
+        d.setSeconds(d.getSeconds() + req.session.facebookToken.expires)
+        req.session.facebookToken.expiresDate = d
         return next()
       catch e
         return next e
