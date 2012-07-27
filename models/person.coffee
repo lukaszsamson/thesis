@@ -6,15 +6,11 @@ Link = require './link'
 
 personSchema = new Schema
   facebookId: String
-  isAppUser: Boolean
   name:  String
   updatedDate: Date
   links: [Link.schema]
   linksUpdatedDate: Date
-  friends: [{
-    facebookId: String
-    name:  String
-  }]
+  friends: [Friend.schema]
   friendsUpdatedDate: Date
 
 
@@ -24,10 +20,26 @@ m = () ->
       count: 1
       sharedBy: [{
         id: @facebookId
-        friends: @friends
-        isAppUser: @isAppUser
+        friends: @friends.map (f) -> {
+          id: f.facebookId
+          name: f.name
+        }
+        isAppUser: true
       }]
     })
+  @friends.forEach (friend) ->
+    friend.links.forEach (link) ->
+      emit(link.url, {
+        count: 1
+        sharedBy: [{
+          id: friend.facebookId
+          friends: friend.mutualFriends.concat({
+            id: @facebookId
+            name: @name
+          })
+          isAppUser: false
+        }]
+      })
 
 r = (key, values) ->
   sharedBy = []

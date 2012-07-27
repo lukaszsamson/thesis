@@ -1,13 +1,13 @@
 express = require 'express'
-stylus = require 'stylus'
-assets = require 'connect-assets'
+#stylus = require 'stylus'
+#assets = require 'connect-assets'
 
 mongoose = require('mongoose')
 
 db = mongoose.connect 'mongodb://localhost/test'
 
 app = express()
-app.use assets()
+#app.use assets()
 app.set 'view engine', 'jade'
 app.set 'facebook app id', '102219526568766'
 app.set 'facebook app secret', 'ee755ea1ef4ab900bb46b497d5a93ca0'

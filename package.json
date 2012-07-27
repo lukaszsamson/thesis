@@ -9,13 +9,8 @@
     "kue": "*",
     "async": "*",
     "redis": "*",
-    "reds": "*",
-    "stylus": "*",
-    "nib": "*",
     "coffee-script": "*",
-    "jade": "*",
-    "connect-assets": "*",
-    "markdown": "*"
+    "jade": "*"
   },
   "scripts": {
     "test": "mocha",
@@ -25,5 +20,5 @@
     "mocha": "*",
     "should": "*"
   },
-  "engine": "node ~> 0.6.x"
+  "engine": "node ~> 0.8.x"
 }
