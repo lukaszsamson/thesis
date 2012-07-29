@@ -1,0 +1,16 @@
+extends ../layout
+
+block content
+  .span3
+    nav.well.sidebar-nav
+      ul.nav.nav-list
+        li
+          a(href="/person/get")
+            i.icon-plus
+            = 'Create new'
+        li.nav-header Created
+  .span5
+    button.btn.btn-large#getData
+      | Get data
+    button.btn.btn-large#countLinks
+      | Count links

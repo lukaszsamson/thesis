@@ -9,8 +9,8 @@ friendSchema = new Schema
     linksUpdatedDate: Date
     #mutualFriendsUpdatedDate: Date
     mutualFriends: [{
-    name: String
-    facebookId: String
+      name: String
+      facebookId: String
     }]
 
 

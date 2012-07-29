@@ -63,13 +63,37 @@ f = (key, value) ->
     person.mutualPercent = 100 * cnt / person.friends.length
 
   return value
-
+links = {}
+links.m = () ->
+  @links.forEach (link) =>
+    emit(link.url, {
+      sharedBy: [@facebookId]
+      count: 1
+    })
+  @friends.forEach (friend) ->
+    friend.links.forEach (link) ->
+      emit(link.url, {
+        sharedBy: [friend.facebookId]
+        count: 1
+      })
+    
+links.r = (key, values) ->
+  sharedBy = []
+  count = 0
+  values.forEach (value) ->
+    sharedBy = sharedBy.concat value.sharedBy
+    count += value.count
+  return {
+    count: count
+    sharedBy: sharedBy
+  }
+ 
 
 #friendSchema.post 'save', (next) ->
-personSchema.statics.countMutualLinks = (callback) ->
-  this.collection.mapReduce(m, r, {
-    finalize: f
-    out: 'countMutualLinks'
+personSchema.statics.countLinks = (callback) ->
+  this.collection.mapReduce(links.m, links.r, {
+    #finalize: f
+    out: 'links'
   }, callback)
 
 personSchema.statics.getCountMutualLinks = (callback) ->
@@ -79,6 +103,11 @@ personSchema.statics.getCountMutualLinks = (callback) ->
       return callback(err) if err
       callback(null, links)
 
-
+personSchema.statics.getLinks = (callback) ->
+  mongoose.connection.db.collection 'links', (err, collection) ->
+    return callback(err) if err
+    collection.find({}).sort({'value.count': -1}).limit(10).toArray (err, links) ->
+      return callback(err) if err
+      callback(null, links)
 
 module.exports = mongoose.model 'Person', personSchema

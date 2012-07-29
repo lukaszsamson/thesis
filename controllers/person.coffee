@@ -22,17 +22,27 @@ exports.countLinks = (req, res, next) ->
     return next(e) if e
     res.send 200
 
-exports.getCountLinks = (req, res, next) ->
-  Person.getCountMutualLinks (e, links) ->
+exports.links = (req, res, next) ->
+  Person.getLinks (e, links) ->
     return next(e) if e
-    res.json(JSON.stringify(links))
+    res.render('person/links', {
+      title: 'Links'
+      id: '/links'
+      links: links
+    })
 
 
 exports.index = (req, res) ->
+  res.render 'person/index', {
+    title: 'Person'
+    id: '/person'
+  }
+exports.getData = (req, res, next) ->  
   getAppUser getToken(req), (e) ->
     return next(e) if e
-    res.render
-      token: getToken req
+    res.send 200
+
+
 ###
 function NotFound(msg) {
   Error.call(this);
@@ -70,12 +80,12 @@ getToken = (req) ->
 
 countLinks = (done) ->
   console.log 'Creating countLinks job'
-  jobs.create('gcountLinksd', {
+  jobs.create('countLinks', {
     title: 'Counting links'
   }).save done
 
 jobs.process 'countLinks', 3, (job, done) ->
-  Person.countMutualLinks(done)
+  Person.countLinks(done)
 
 
 

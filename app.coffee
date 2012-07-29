@@ -33,8 +33,11 @@ app.get '/test/', test.index
 
 person = require './controllers/person'
 app.get '/person', person.index
-app.get '/person/startCountLinks', person.countLinks
-app.get '/person/countLinks', person.getCountLinks
+app.post '/person/getData', person.getData
+app.post '/person/countLinks', person.countLinks
+app.get '/person/links', person.links
+
+
 app.use express.static __dirname + '/public'
 app.use express.errorHandler
   dumpExceptions: true

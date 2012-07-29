@@ -1,0 +1,18 @@
+.navbar.navbar-fixed-top
+  .navbar-inner
+    .container-fluid
+      a(data-toggle='collapse',data-target='.nav-collapse').btn.btn-navbar
+        span.icon-bar
+        span.icon-bar
+        span.icon-bar
+      a(href='#').brand #{title}
+      nav.nav-collapse
+        ul.nav
+          - var obj = { '/person': 'Person' }
+          - each val, key in obj
+            - if (id == key) 
+              li.active
+                a(href='#{key}') #{val}
+            - else
+              li
+                a(href='#{key}') #{val}

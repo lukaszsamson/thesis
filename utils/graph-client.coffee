@@ -83,11 +83,11 @@ facebookAuth = (config) ->
     path + query;
 
   auth = (req, res, next) ->
-    if req.session.facebookToken and req.session.facebookToken.expiresDate < new Date
+    if req.session.facebookToken and Date.parse(req.session.facebookToken.expiresDate) > new Date
       return next()
     code = req.query.code
     if not code
-      return res.redirect getDialogUrl(config.appId, config.redirectUri, config.scope)
+      return res.redirect getDialogUrl(config.appId, req.protocol + '://' + req.headers.host + req.url, config.scope)
 
     request getAccessTokenUrl(config.appId, config.redirectUri, config.appSecret, code), (error, body) ->
       return next error if error
@@ -96,7 +96,7 @@ facebookAuth = (config) ->
         d = new Date
         d.setSeconds(d.getSeconds() + req.session.facebookToken.expires)
         req.session.facebookToken.expiresDate = d
-        return next()
+        return res.redirect req.protocol + '://' + req.headers.host + req.url.split('?')[0]
       catch e
         return next e
 
