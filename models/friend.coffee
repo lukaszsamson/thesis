@@ -3,11 +3,15 @@ Schema = mongoose.Schema
 Link = require './link'
 
 friendSchema = new Schema
-    name:  String,
     facebookId: String
+    updatedDate: Date
+    name:  String,
+    firstName: String
+    lastName: String
+    gender: String
     links: [Link.schema]
     linksUpdatedDate: Date
-    #mutualFriendsUpdatedDate: Date
+    mutualFriendsUpdatedDate: Date
     mutualFriends: [{
       name: String
       facebookId: String

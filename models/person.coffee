@@ -4,16 +4,92 @@ Schema = mongoose.Schema
 Friend = require './friend'
 Link = require './link'
 
-personSchema = new Schema
+PersonSchema = new Schema
   facebookId: String
-  name:  String
   updatedDate: Date
+  firstName: String
+  lastName: String
+  gender: String
+  name:  String
   links: [Link.schema]
   linksUpdatedDate: Date
   friends: [Friend.schema]
   friendsUpdatedDate: Date
 
+PersonSchema.statics.saveOrUpdate = (personData, done) ->
+  this.findOne({
+    facebookId: personData.id
+  }, (error, person) ->
+    return done(error) if error
+    if not person
+      new Person(
+        name: personData.name
+        firstName: personData.first_name
+        lastName: personData.last_name
+        gender: personData.gender
+        facebookId: personData.id
+        createdDate: new Date
+        updatedDate: new Date
+      ).save done
+    else
+      person.name = personData.name
+      firstName: personData.first_name
+      lastName: personData.last_name
+      gender: personData.gender
+      person.updatedDate = new Date
+      person.save(done)
+  )
 
+PersonSchema.statics.updateFriend = (id, friend, done) ->
+  this.update({
+      facebookId: id
+      'friends.id': friend.id
+    }, {
+      $set: {
+        'friends.$.gender': friend.gender
+        'friends.$.updatedDate': new Date
+      }
+    }, {
+      multi: false
+    }, done)
+  
+  
+PersonSchema.statics.updateLinks = (id, links, done) ->
+  this.update({
+      facebookId: id
+    }, {
+      $set: {
+        linksUpdatedDate: new Date
+        links: links.map (link) ->
+          new Link(
+            url: link.link,
+            facebookId: link.id
+          )
+      }
+    }, {
+      multi: false
+    }, done)
+  
+PersonSchema.statics.updateFrineds = (id, friends, done) ->
+  this.update({
+      facebookId: id,
+    }, {
+      $set: {
+        friendsUpdatedDate: new Date
+        friends: friends.map (friend) ->
+          new Friend(
+            facebookId: friend.id,
+            name: friend.name
+          )
+      }
+    }, {
+      multi: false
+    }, done)
+  
+  
+  
+  
+  
 m = () ->
   @links.forEach (link) ->
     emit(link.url, {
@@ -90,24 +166,25 @@ links.r = (key, values) ->
  
 
 #friendSchema.post 'save', (next) ->
-personSchema.statics.countLinks = (callback) ->
+PersonSchema.statics.countLinks = (callback) ->
   this.collection.mapReduce(links.m, links.r, {
     #finalize: f
     out: 'links'
   }, callback)
 
-personSchema.statics.getCountMutualLinks = (callback) ->
+PersonSchema.statics.getCountMutualLinks = (callback) ->
   mongoose.connection.db.collection 'countMutualLinks', (err, collection) ->
     return callback(err) if err
     collection.find({}).sort({'value': -1}).limit(10).toArray (err, links) ->
       return callback(err) if err
       callback(null, links)
 
-personSchema.statics.getLinks = (callback) ->
+PersonSchema.statics.getLinks = (callback) ->
   mongoose.connection.db.collection 'links', (err, collection) ->
     return callback(err) if err
     collection.find({}).sort({'value.count': -1}).limit(10).toArray (err, links) ->
       return callback(err) if err
       callback(null, links)
 
-module.exports = mongoose.model 'Person', personSchema
+Person = mongoose.model 'Person', PersonSchema
+module.exports = Person

@@ -1,21 +1,18 @@
 Graph = require('../utils/graph-client').Graph
+User = require '../models/user'
 Person = require '../models/person'
-Link = require '../models/link'
-Document = require '../models/document'
 util = require 'util'
-async = require 'async'
-request = require '../utils/safe-request'
+jobs = require('../utils/jobs')
 
-kue = require 'kue'
-
-jobs = kue.createQueue()
-Job = kue.Job;
 
 exports.logOutFromFacebook = (req, res) ->
   delete req.session.facebookToken
 
-exports.deleteFacebookData = (req, res) ->
-  delete req.session.facebookToken
+exports.deleteFacebookData = (req, res, next) ->
+  Person.remove({facebookId: facebookId}, (e) ->
+    next(e) if e
+    res.send 200
+  )
 
 exports.countLinks = (req, res, next) ->
   countLinks (e) ->
@@ -38,9 +35,10 @@ exports.index = (req, res) ->
     id: '/person'
   }
 exports.getData = (req, res, next) ->  
-  getAppUser getToken(req), (e) ->
+  jobs.getAppUser(getToken(req), (e) ->
     return next(e) if e
     res.send 200
+  )
 
 
 ###
@@ -78,231 +76,8 @@ getToken = (req) ->
 
 
 
-countLinks = (done) ->
-  console.log 'Creating countLinks job'
-  jobs.create('countLinks', {
-    title: 'Counting links'
-  }).save done
-
-jobs.process 'countLinks', 3, (job, done) ->
-  Person.countLinks(done)
 
 
-
-
-
-
-
-
-
-scrapLink = (url, done) ->
-  console.log 'Creating scrapLink job for %s', url
-  jobs.create('scrap link',
-    title: 'Scrapping link ' + url
-    url: url
-  ).attempts(3)
-  .save done
-
-jobs.process 'scrap link', 3, (job, done) ->
-  url = job.data.url
-  async.waterfall [
-    (c0) -> request url, c0
-  , (document, c0) -> saveOrUpdateDocument {
-      content: document
-      url: url
-    }, c0 if document else c0()
-  ], done
-
-getAppUser = (access_token, done) ->
-  console.log 'Creating getAppUser job'
-  jobs.create 'getAppUser',
-    title: 'Getting app user'
-    access_token: access_token
-  .attempts(3)
-  .save done
-
-jobs.process 'getAppUser', 3, (job, done) ->
-  async.waterfall [
-    (c0) -> (new Graph(job.data.access_token)).getAppUser c0
-  , (appUser, c0) -> async.series [
-      (c1) -> saveOrUpdatePerson appUser, c1
-    , (c1) -> async.parallel [
-        (c2) -> getLinks appUser, job.data.access_token, c2
-      , (c2) -> getFriends appUser, job.data.access_token, c2
-      ], c1
-    ], c0
-  ], done
-
-getFriend = (appUser, friend, access_token, done) ->
-  console.log 'Creating getFriend job'
-  jobs.create 'getFriend',
-    title: 'Getting friend ' + friend.name
-    appUser: appUser
-    friend: friend
-    access_token: access_token
-  .attempts(3)
-  .save done
-
-
-jobs.process 'getFriend', 3, (job, done) ->
-  async.waterfall [
-    (c0) -> (new Graph(job.data.access_token)).getFriend job.data.friend.id, c0
-  , (friend, c0) -> async.series [
-      (c1) -> saveOrUpdateFriend job.data.appUser, friend, c1
-    , (c1) -> async.parallel [
-        (c2) -> getLinks friend, job.data.access_token, c2
-      , (c2) -> getMutualFriends job.data.appUser, friend, job.data.access_token, c2
-      ], c1
-    ], c0
-  ], done
-
-
-getFriends = (appUser, access_token, done) ->
-  console.log 'Creating getFriends job'
-  jobs.create 'getFriends',
-    title: 'Getting friends'
-    appUser: appUser
-    access_token: access_token
-  .attempts(3)
-  .save done
-
-jobs.process 'getFriends', 3, (job, done) ->
-  async.waterfall [
-    (c0) -> (new Graph(job.data.access_token)).getFriends c0
-  , (friends, c0) -> async.series [
-      (c1) -> updateFrineds job.data.appUser.id, friends, c1
-    , (c1) -> async.forEach friends, ((friend, c2) ->
-        getFriend job.data.appUser, friend, job.data.access_token, c2
-      ), c1
-    ], c0
-  ], done
-
-getMutualFriends = (person, friend, access_token, done) ->
-  console.log 'Creating getMutualFriends job for %s', friend.name
-  jobs.create('getMutualFriends',
-    title: 'Getting mutual friends of ' + friend.name
-    person: person
-    friend: friend
-    access_token: access_token
-  ).attempts(3)
-  .save done
-
-jobs.process 'getMutualFriends', 3, (job, done) ->
-  async.waterfall [
-    (c0) -> (new Graph(job.data.access_token)).getMutualFriends job.data.friend.id, c0
-  , (mutualFriends, c0) -> updateMutualFrineds job.data.person.id, job.data.friend.id, mutualFriends, c0
-  ], done
-
-
-getLinks = (person, access_token, done) ->
-  console.log 'Creating getLinks job for %s', person.name
-  jobs.create('getLinks',
-    title: 'Getting links submitted by ' + person.name
-    person: person
-    access_token: access_token
-  ).attempts(3)
-  .save done
-
-jobs.process 'getLinks', 3, (job, done) ->
-  async.waterfall [
-    (c0) -> (new Graph(job.data.access_token)).getLinks job.data.person.id, c0
-  , (links, c0) -> async.series [
-      (c1) -> updatePersonLinks job.data.person.id, links, c1
-    #, (c1) -> async.forEach links, ((link, c2) -> scrapLink link.link, c2), c1
-    ], c0
-  ], done
-
-
-jobs.on 'job complete', (id) ->
-  #return
-  Job.get id, (err, job) ->
-    if err
-      console.log 'Error while getting job #%d', job.id
-      console.log err
-      return
-    job.remove (err) ->
-      if err
-        console.log 'Error while removing job #%d', job.id
-        console.log err
-        return
-
-#TODO upsert?
-saveOrUpdateFriend = (me, friend, done) ->
-  Person.findOne {
-    facebookId: friend.id
-  }, (error, result) ->
-    return done(error) if error
-    if not result
-      new Person
-        name: friend.name
-        facebookId: friend.id
-        isAppUser: false
-        updatedDate: new Date
-        friends: [{
-          facebookId: me.id,
-          name: me.name
-        }]
-      .save done
-    else
-      result.name = friend.name
-      result.updatedDate = new Date
-      #TODO add to set
-      #TODO update changed name
-      result.friends.push({
-        facebookId: me.id,
-        name: me.name
-      }) unless result.friends.some((i) -> i.facebookId == me.id)
-      result.save done
-
-#TODO upsert?
-saveOrUpdatePerson = (person, done) ->
-  Person.findOne {
-    facebookId: person.id
-  }, (error, result) ->
-    return done(error) if error
-    if not result
-      new Person
-        name: person.name
-        facebookId: person.id
-        isAppUser: true
-        updatedDate: new Date
-      .save done
-    else
-      result.name = person.name
-      result.updatedDate = new Date
-      result.isAppUser = true
-      result.save done
-
-
-updatePersonLinks = (id, links, done) ->
-  Person.update {
-      facebookId: id
-    }, {
-      $set: {
-        linksUpdatedDate: new Date
-        links: links.map (link) ->
-          new Link
-            url: link.link,
-            facebookId: link.id
-      }
-    }, {
-      multi: false
-    }, done
-
-
-updateFrineds = (personId, friends, done) ->
-  Person.update {
-      facebookId: personId,
-    }, {
-      $set: {
-        friendsUpdatedDate: new Date
-        friends: friends.map (friend) ->
-          facebookId: friend.id,
-          name: friend.name
-      }
-    }, {
-      multi: false
-    }, done
 
 #TODO handle no longer friends
 #non funkciona
@@ -336,21 +111,4 @@ updateMutualFrineds = (personId, friendId, mutualFriends, done) ->
     }, {
       multi: false
     }, done
-###
-###
-saveOrUpdateDocument = (document, done) ->
-  Document.findOne {
-  url: document.url
-  }, (error, result) ->
-    return done(error) if error
-    if not result
-      new Document
-        url: document.url
-        content: document.content
-        updatedDate: new Date
-      .save done
-    else
-      result.content = document.content
-      result.updatedDate = new Date
-      result.save done
 ###
