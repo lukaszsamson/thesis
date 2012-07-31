@@ -49,12 +49,12 @@ getFriend = (appUser, friend, access_token, done) ->
 
 jobs.process('getFriend', 3, (job, done) ->
   async.waterfall([
-    (c0) -> (new Graph(job.data.access_token)).getFriend job.data.friend.id, c0
+    (c0) -> (new Graph(job.data.access_token)).getFriend(job.data.friend.id, c0)
   , (friend, c0) -> async.series [
-      (c1) -> Person.updateFriend job.data.appUser, friend, c1
+      (c1) -> Person.updateFriend(job.data.appUser.id, friend, c1)
     , (c1) -> async.parallel [
-        (c2) -> getLinks friend, job.data.access_token, c2
-      , (c2) -> getMutualFriends job.data.appUser, friend, job.data.access_token, c2
+        (c2) -> getFriendLinks(job.data.appUser, friend, job.data.access_token, c2)
+      , (c2) -> getMutualFriends(job.data.appUser, friend, job.data.access_token, c2)
       ], c1
     ], c0
   ], done))
@@ -93,7 +93,7 @@ getMutualFriends = (person, friend, access_token, done) ->
 jobs.process 'getMutualFriends', 3, (job, done) ->
   async.waterfall [
     (c0) -> (new Graph(job.data.access_token)).getMutualFriends job.data.friend.id, c0
-  , (mutualFriends, c0) -> updateMutualFrineds job.data.person.id, job.data.friend.id, mutualFriends, c0
+  , (mutualFriends, c0) -> Person.updateMutualFrineds(job.data.person.id, job.data.friend.id, mutualFriends, c0)
   ], done
 
 
@@ -115,16 +115,37 @@ jobs.process('getLinks', 3, (job, done) ->
     ], c0)
   ], done))
 
+getFriendLinks = (person, friend, access_token, done) ->
+  console.log 'Creating getLinks job for %s', friend.name
+  jobs.create('getFriendLinks',
+    title: 'Getting links submitted by ' + friend.name
+    person: person
+    friend: friend
+    access_token: access_token
+  ).attempts(3)
+  .save done
 
-jobs.on 'job complete', (id) ->
+jobs.process('getFriendLinks', 3, (job, done) ->
+  async.waterfall([
+    (c0) -> (new Graph(job.data.access_token)).getLinks(job.data.friend.id, c0),
+    (links, c0) -> async.series([
+      (c1) -> Person.updateFriendLinks(job.data.person.id, job.data.friend.id, links, c1)
+    #, (c1) -> async.forEach links, ((link, c2) -> scrapLink link.link, c2), c1
+    ], c0)
+  ], done))
+  
+jobs.on('job complete', (id) ->
   #return
-  Job.get id, (err, job) ->
+  Job.get(id, (err, job) ->
     if err
       console.log 'Error while getting job #%d', job.id
       console.log err
       return
-    job.remove (err) ->
+    job.remove((err) ->
       if err
         console.log 'Error while removing job #%d', job.id
         console.log err
         return
+      )
+    )
+  )

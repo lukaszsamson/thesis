@@ -40,10 +40,10 @@ PersonSchema.statics.saveOrUpdate = (personData, done) ->
       person.save(done)
   )
 
-PersonSchema.statics.updateFriend = (id, friend, done) ->
+PersonSchema.statics.updateFriend = (personId, friend, done) ->
   this.update({
-      facebookId: id
-      'friends.id': friend.id
+      facebookId: personId
+      'friends.facebookId': friend.id
     }, {
       $set: {
         'friends.$.gender': friend.gender
@@ -54,25 +54,44 @@ PersonSchema.statics.updateFriend = (id, friend, done) ->
     }, done)
   
   
-PersonSchema.statics.updateLinks = (id, links, done) ->
+PersonSchema.statics.updateLinks = (personId, links, done) ->
   this.update({
-      facebookId: id
+      facebookId: personId
     }, {
       $set: {
         linksUpdatedDate: new Date
-        links: links.map (link) ->
+        links: links.map((link) ->
           new Link(
             url: link.link,
             facebookId: link.id
           )
+        )
+      }
+    }, {
+      multi: false
+    }, done)
+    
+PersonSchema.statics.updateFriendLinks = (personId, friendId, links, done) ->
+  this.update({
+      facebookId: personId
+      'friends.facebookId': friendId
+    }, {
+      $set: {
+        'friends.$.linksUpdatedDate': new Date
+        'friends.$.links': links.map((link) ->
+          new Link(
+            url: link.link,
+            facebookId: link.id
+          )
+        )
       }
     }, {
       multi: false
     }, done)
   
-PersonSchema.statics.updateFrineds = (id, friends, done) ->
+PersonSchema.statics.updateFrineds = (personId, friends, done) ->
   this.update({
-      facebookId: id,
+      facebookId: personId,
     }, {
       $set: {
         friendsUpdatedDate: new Date
@@ -86,8 +105,20 @@ PersonSchema.statics.updateFrineds = (id, friends, done) ->
       multi: false
     }, done)
   
-  
-  
+PersonSchema.statics.updateMutualFrineds = (personId, friendId, mutualFriends, done) ->
+  this.update({
+      facebookId: personId,
+      'friends.facebookId': friendId,
+    }, {
+      $set: {
+        'friends.$.mutualFriendsUpdatedDate': new Date
+        'friends.$.mutualFriends': mutualFriends.map (mutualFriend) ->
+          facebookId: mutualFriend.id,
+          name: mutualFriend.name
+      }
+    }, {
+      multi: false
+    }, done)
   
   
 m = () ->

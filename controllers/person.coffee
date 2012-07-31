@@ -76,39 +76,3 @@ getToken = (req) ->
 
 
 
-
-
-
-#TODO handle no longer friends
-#non funkciona
-updateMutualFrineds = (person, friend, mutualFriends, done) ->
-  Person.update {
-    facebookId: friend.id,
-  }, {
-  $addToSet: {
-    friends: {
-      $each: mutualFriends.map (mutualFriend) ->
-        facebookId: mutualFriend.id,
-        name: mutualFriend.name
-    }
-  }
-  }, {
-  multi: false
-  }, done
-
-###
-updateMutualFrineds = (personId, friendId, mutualFriends, done) ->
-  Person.update {
-      facebookId: personId,
-      'friends.facebookId': friendId,
-    }, {
-      $set: {
-        'friends.$.mutualFriendsUpdatedDate': new Date
-        'friends.$.mutualFriends': mutualFriends.map (mutualFriend) ->
-          facebookId: mutualFriend.id,
-          name: mutualFriend.name
-      }
-    }, {
-      multi: false
-    }, done
-###
