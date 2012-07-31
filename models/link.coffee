@@ -3,9 +3,11 @@ mongoose = require 'mongoose'
 Schema = mongoose.Schema
 
 
-linkSchema = new Schema
+LinkSchema = new Schema
   facebookId: String
-  url: String
+  link: String
+  name: String
+  message: String
 
 
-module.exports = mongoose.model 'Link', linkSchema
+module.exports = mongoose.model 'Link', LinkSchema

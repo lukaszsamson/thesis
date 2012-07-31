@@ -12,6 +12,15 @@ class GraphClient
         callback null, data
       catch e
         callback e
+        
+  getLikes: (facebookId, callback) ->
+    request @getLikesUrl(facebookId), (error, body) ->
+      return callback error if error
+      try
+        data = JSON.parse(body).data
+        callback null, data
+      catch e
+        callback e
 
   getAppUser: (callback) ->
     request @getAppUserUrl(), (error, body) ->
@@ -32,22 +41,24 @@ class GraphClient
         return callback e
 
   getFriends: (callback) ->
-    request @getFriendsUrl(), (error, body) ->
+    request(@getFriendsUrl(), (error, body) ->
       return callback error if error
       try
         data = JSON.parse(body).data;
         return callback null, data
       catch e
         return callback e
+    )
 
   getMutualFriends: (facebookId, callback) ->
-    request @getMutualFriendsUrl(facebookId), (error, body) ->
-      return callback error if error
+    request(@getMutualFriendsUrl(facebookId), (error, body) ->
+      return callback(error) if error
       try
         data = JSON.parse(body).data;
-        return callback null, data
+        return callback(null, data)
       catch e
-        return callback e
+        return callback(e)
+    )
 
   getAppUserUrl: ->
     'https://graph.facebook.com/me?access_token=' + encodeURIComponent @access_token
@@ -64,7 +75,9 @@ class GraphClient
   getLinksUrl: (facebookId) ->
     'https://graph.facebook.com/' + encodeURIComponent(facebookId) + '/links?access_token=' + encodeURIComponent @access_token
 
-
+  getLikesUrl: (facebookId) ->
+    'https://graph.facebook.com/' + encodeURIComponent(facebookId) + '/likes?access_token=' + encodeURIComponent @access_token
+    
   getlogOutUrl: (redirectUrl) ->
     'https://www.facebook.com/logout.php?next=' + encodeURIComponent(redirectUrl) + '&access_token=' + encodeURIComponent @access_token
 

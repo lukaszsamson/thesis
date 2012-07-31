@@ -31,6 +31,7 @@ jobs.process('getAppUser', 3, (job, done) ->
       (c1) -> Person.saveOrUpdate(appUser, c1),
       (c1) -> async.parallel([
         (c2) -> getLinks(appUser, job.data.access_token, c2),
+        (c2) -> getLikes(appUser, job.data.access_token, c2),
         (c2) -> getFriends(appUser, job.data.access_token, c2)
       ], c1)
     ], c0)
@@ -53,8 +54,9 @@ jobs.process('getFriend', 3, (job, done) ->
   , (friend, c0) -> async.series [
       (c1) -> Person.updateFriend(job.data.appUser.id, friend, c1)
     , (c1) -> async.parallel [
-        (c2) -> getFriendLinks(job.data.appUser, friend, job.data.access_token, c2)
-      , (c2) -> getMutualFriends(job.data.appUser, friend, job.data.access_token, c2)
+        (c2) -> getFriendLinks(job.data.appUser, friend, job.data.access_token, c2),
+        (c2) -> getFriendLikes(job.data.appUser, friend, job.data.access_token, c2),
+        (c2) -> getMutualFriends(job.data.appUser, friend, job.data.access_token, c2)
       ], c1
     ], c0
   ], done))
@@ -88,13 +90,13 @@ getMutualFriends = (person, friend, access_token, done) ->
     friend: friend
     access_token: access_token
   ).attempts(3)
-  .save done
+  .save(done)
 
-jobs.process 'getMutualFriends', 3, (job, done) ->
-  async.waterfall [
-    (c0) -> (new Graph(job.data.access_token)).getMutualFriends job.data.friend.id, c0
+jobs.process('getMutualFriends', 3, (job, done) ->
+  async.waterfall([
+    (c0) -> (new Graph(job.data.access_token)).getMutualFriends(job.data.friend.id, c0)
   , (mutualFriends, c0) -> Person.updateMutualFrineds(job.data.person.id, job.data.friend.id, mutualFriends, c0)
-  ], done
+  ], done))
 
 
 getLinks = (person, access_token, done) ->
@@ -133,6 +135,40 @@ jobs.process('getFriendLinks', 3, (job, done) ->
     #, (c1) -> async.forEach links, ((link, c2) -> scrapLink link.link, c2), c1
     ], c0)
   ], done))
+  
+  
+
+
+getLikes = (person, access_token, done) ->
+  console.log 'Creating getLikes job for %s', person.name
+  jobs.create('getLikes',
+    title: 'Getting likes submitted by ' + person.name
+    person: person
+    access_token: access_token
+  ).attempts(3)
+  .save done
+
+jobs.process('getLikes', 3, (job, done) ->
+  async.waterfall([
+    (c0) -> (new Graph(job.data.access_token)).getLikes(job.data.person.id, c0),
+    (likes, c0) -> Person.updateLikes(job.data.person.id, likes, c0)
+  ], done))
+
+getFriendLikes = (person, friend, access_token, done) ->
+  console.log 'Creating getLikes job for %s', friend.name
+  jobs.create('getFriendLikes',
+    title: 'Getting likes submitted by ' + friend.name
+    person: person
+    friend: friend
+    access_token: access_token
+  ).attempts(3)
+  .save done
+
+jobs.process('getFriendLikes', 3, (job, done) ->
+  async.waterfall([
+    (c0) -> (new Graph(job.data.access_token)).getLikes(job.data.friend.id, c0),
+    (likes, c0) -> Person.updateFriendLikes(job.data.person.id, job.data.friend.id, likes, c0)
+  ], done))  
   
 jobs.on('job complete', (id) ->
   #return

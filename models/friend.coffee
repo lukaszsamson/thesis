@@ -1,6 +1,7 @@
 mongoose = require 'mongoose'
 Schema = mongoose.Schema
 Link = require './link'
+Like = require './like'
 
 friendSchema = new Schema
     facebookId: String
@@ -11,6 +12,8 @@ friendSchema = new Schema
     gender: String
     links: [Link.schema]
     linksUpdatedDate: Date
+    likes: [Like.schema]
+    likesUpdatedDate: Date
     mutualFriendsUpdatedDate: Date
     mutualFriends: [{
       name: String

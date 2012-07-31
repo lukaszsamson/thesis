@@ -3,6 +3,7 @@ mongoose = require 'mongoose'
 Schema = mongoose.Schema
 Friend = require './friend'
 Link = require './link'
+Like = require './like'
 
 PersonSchema = new Schema
   facebookId: String
@@ -13,6 +14,8 @@ PersonSchema = new Schema
   name:  String
   links: [Link.schema]
   linksUpdatedDate: Date
+  likes: [Like.schema]
+  likesUpdatedDate: Date
   friends: [Friend.schema]
   friendsUpdatedDate: Date
 
@@ -62,8 +65,10 @@ PersonSchema.statics.updateLinks = (personId, links, done) ->
         linksUpdatedDate: new Date
         links: links.map((link) ->
           new Link(
-            url: link.link,
+            link: link.link
             facebookId: link.id
+            name: link.name ? ''
+            message: link.message ? ''
           )
         )
       }
@@ -80,15 +85,54 @@ PersonSchema.statics.updateFriendLinks = (personId, friendId, links, done) ->
         'friends.$.linksUpdatedDate': new Date
         'friends.$.links': links.map((link) ->
           new Link(
-            url: link.link,
+            link: link.link
             facebookId: link.id
+            name: link.name ? ''
+            message: link.message ? ''
           )
         )
       }
     }, {
       multi: false
     }, done)
-  
+
+PersonSchema.statics.updateLikes = (personId, likes, done) ->
+  this.update({
+      facebookId: personId
+    }, {
+      $set: {
+        likesUpdatedDate: new Date
+        likes: likes.map((like) ->
+          new Like(
+            facebookId: like.id
+            name: like.name ? ''
+            category: like.category ? ''
+          )
+        )
+      }
+    }, {
+      multi: false
+    }, done)
+    
+PersonSchema.statics.updateFriendLikes = (personId, friendId, likes, done) ->
+  this.update({
+      facebookId: personId
+      'friends.facebookId': friendId
+    }, {
+      $set: {
+        'friends.$.likesUpdatedDate': new Date
+        'friends.$.likes': likes.map((like) ->
+          new Like(
+            facebookId: like.id
+            name: like.name ? ''
+            category: like.category ? ''
+          )
+        )
+      }
+    }, {
+      multi: false
+    }, done)
+    
 PersonSchema.statics.updateFrineds = (personId, friends, done) ->
   this.update({
       facebookId: personId,
