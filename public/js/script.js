@@ -21,4 +21,22 @@ $(function() {
       }
     });
   });
+  $('#countLikesByName').click(function() {
+    $.ajax({
+      url: '/person/countLikes/byName',
+      type: 'POST',
+      success: function(data, textStatus, jqXHR) {
+        alert('ok');
+      }
+    });
+  });
+  $('#countLikesByCategory').click(function() {
+    $.ajax({
+      url: '/person/countLikes/byCategory',
+      type: 'POST',
+      success: function(data, textStatus, jqXHR) {
+        alert('ok');
+      }
+    });
+  });
 });

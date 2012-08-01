@@ -6,7 +6,7 @@ Graph = require('../utils/graph-client').Graph
 User = require '../models/user'
 Person = require '../models/person'
 
-countLinks = (done) ->
+exports.countLinks = (done) ->
   console.log 'Creating countLinks job'
   jobs.create('countLinks', {
     title: 'Counting links'
@@ -15,6 +15,24 @@ countLinks = (done) ->
 jobs.process 'countLinks', 3, (job, done) ->
   Person.countLinks(done)
 
+exports.countLikesByName = (done) ->
+  console.log 'Creating countLikes job'
+  jobs.create('countLikesByName', {
+    title: 'Counting likes'
+  }).save done
+
+jobs.process 'countLikesByName', 3, (job, done) ->
+  Person.countLikesByName(done)
+
+exports.countLikesByCategory = (done) ->
+  console.log 'Creating countLikes job'
+  jobs.create('countLikesByCategory', {
+    title: 'Counting likes'
+  }).save done
+
+jobs.process 'countLikesByCategory', 3, (job, done) ->
+  Person.countLikesByCategory(done)
+  
 exports.getAppUser = (access_token, done) ->
   console.log 'Creating getAppUser job'
   jobs.create('getAppUser',

@@ -217,13 +217,13 @@ f = (key, value) ->
 links = {}
 links.m = () ->
   @links.forEach (link) =>
-    emit(link.url, {
+    emit(link.link, {
       sharedBy: [@facebookId]
       count: 1
     })
   @friends.forEach (friend) ->
     friend.links.forEach (link) ->
-      emit(link.url, {
+      emit(link.link, {
         sharedBy: [friend.facebookId]
         count: 1
       })
@@ -240,6 +240,79 @@ links.r = (key, values) ->
   }
  
 
+ 
+likes = {}
+likes.mbn = () ->
+  @likes.forEach((like) =>
+    emit(like.name, {
+      sharedBy: [@facebookId]
+      count: 1
+    })
+  )
+  @friends.forEach((friend) ->
+    friend.likes.forEach((like) ->
+      emit(like.name, {
+        sharedBy: [friend.facebookId]
+        count: 1
+      })
+    )
+  )
+
+likes.mbc = () ->
+  @likes.forEach((like) =>
+    emit(like.category, {
+      sharedBy: [@facebookId]
+      count: 1
+    })
+  )
+  @friends.forEach((friend) ->
+    friend.likes.forEach((like) ->
+      emit(like.category, {
+        sharedBy: [friend.facebookId]
+        count: 1
+      })
+    )
+  )
+
+    
+likes.r = (key, values) ->
+  sharedBy = []
+  count = 0
+  values.forEach (value) ->
+    sharedBy = sharedBy.concat value.sharedBy
+    count += value.count
+  return {
+    count: count
+    sharedBy: sharedBy
+  }
+ 
+PersonSchema.statics.countLikesByName = (callback) ->
+  this.collection.mapReduce(likes.mbn, likes.r, {
+    #finalize: f
+    out: 'likesByName'
+  }, callback)
+
+PersonSchema.statics.countLikesByCategory = (callback) ->
+  this.collection.mapReduce(likes.mbc, likes.r, {
+    #finalize: f
+    out: 'likesByCategory'
+  }, callback)  
+
+PersonSchema.statics.getLikesByName = (callback) ->
+  mongoose.connection.db.collection 'likesByName', (err, collection) ->
+    return callback(err) if err
+    collection.find({}).sort({'value.count': -1}).limit(10).toArray (err, likes) ->
+      return callback(err) if err
+      callback(null, likes)
+
+
+PersonSchema.statics.getLikesByCategory = (callback) ->
+  mongoose.connection.db.collection 'likesByCategory', (err, collection) ->
+    return callback(err) if err
+    collection.find({}).sort({'value.count': -1}).limit(10).toArray (err, likes) ->
+      return callback(err) if err
+      callback(null, likes)      
+  
 #friendSchema.post 'save', (next) ->
 PersonSchema.statics.countLinks = (callback) ->
   this.collection.mapReduce(links.m, links.r, {

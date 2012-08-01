@@ -36,7 +36,10 @@ app.get '/person', person.index
 app.post '/person/getData', person.getData
 app.post '/person/countLinks', person.countLinks
 app.get '/person/links', person.links
-
+app.post '/person/countLikes/byName', person.countLikesByName
+app.get '/person/likes/byName', person.likesByName
+app.post '/person/countLikes/byCategory', person.countLikesByCategory
+app.get '/person/likes/byCategory', person.likesByCategory
 
 app.use express.static __dirname + '/public'
 app.use express.errorHandler

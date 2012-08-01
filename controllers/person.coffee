@@ -15,10 +15,20 @@ exports.deleteFacebookData = (req, res, next) ->
   )
 
 exports.countLinks = (req, res, next) ->
-  countLinks (e) ->
+  jobs.countLinks (e) ->
     return next(e) if e
     res.send 200
 
+exports.countLikesByName = (req, res, next) ->
+  jobs.countLikesByName (e) ->
+    return next(e) if e
+    res.send 200
+
+exports.countLikesByCategory = (req, res, next) ->
+  jobs.countLikesByCategory (e) ->
+    return next(e) if e
+    res.send 200
+    
 exports.links = (req, res, next) ->
   Person.getLinks (e, links) ->
     return next(e) if e
@@ -28,7 +38,24 @@ exports.links = (req, res, next) ->
       links: links
     })
 
+exports.likesByName = (req, res, next) ->
+  Person.getLikesByName (e, likes) ->
+    return next(e) if e
+    res.render('person/likes', {
+      title: 'Likes by name'
+      id: '/likes/byName'
+      likes: likes
+    })
 
+exports.likesByCategory = (req, res, next) ->
+  Person.getLikesByCategory (e, likes) ->
+    return next(e) if e
+    res.render('person/likes', {
+      title: 'Likes by category'
+      id: '/likes/byCategory'
+      likes: likes
+    })
+    
 exports.index = (req, res) ->
   res.render 'person/index', {
     title: 'Person'
