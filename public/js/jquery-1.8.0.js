@@ -1,17 +1,15 @@
 /*!
- * jQuery JavaScript Library v1.8.0pre
+ * jQuery JavaScript Library v1.8.0
  * http://jquery.com/
- *
- * Copyright (c) 2012 jQuery Foundation and other contributors
- * Dual licensed under the MIT or GPL Version 2 licenses.
- * http://jquery.org/license
  *
  * Includes Sizzle.js
  * http://sizzlejs.com/
- * Copyright 2012, The Dojo Foundation
- * Released under the MIT, BSD, and GPL Licenses.
  *
- * Date: Thu Jul 26 2012 22:26:48 GMT-0400 (Eastern Daylight Time)
+ * Copyright 2012 jQuery Foundation and other contributors
+ * Released under the MIT license
+ * http://jquery.org/license
+ *
+ * Date: Thu Aug 09 2012 16:24:48 GMT-0400 (Eastern Daylight Time)
  */
 (function( window, undefined ) {
 var
@@ -188,7 +186,7 @@ jQuery.fn = jQuery.prototype = {
 	selector: "",
 
 	// The current version of jQuery being used
-	jquery: "1.8.0pre",
+	jquery: "1.8.0",
 
 	// The default length of a jQuery object is 0
 	length: 0,
@@ -2272,6 +2270,9 @@ jQuery.extend({
 		}
 	},
 
+	// Unused in 1.8, left in so attrFn-stabbers won't die; remove in 1.9
+	attrFn: {},
+
 	attr: function( elem, name, value, pass ) {
 		var ret, hooks, notxml,
 			nType = elem.nodeType;
@@ -3598,7 +3599,7 @@ jQuery.fn.extend({
 	},
 	undelegate: function( selector, types, fn ) {
 		// ( namespace ) or ( selector, types [, fn] )
-		return arguments.length == 1? this.off( selector, "**" ) : this.off( types, selector, fn );
+		return arguments.length == 1? this.off( selector, "**" ) : this.off( types, selector || "**", fn );
 	},
 
 	trigger: function( type, data ) {
@@ -3669,9 +3670,9 @@ jQuery.each( ("blur focus focusin focusout load resize scroll unload click dblcl
 });
 /*!
  * Sizzle CSS Selector Engine
- *  Copyright 2012, The Dojo Foundation
- *  Released under the MIT, BSD, and GPL Licenses.
- *  More information: http://sizzlejs.com/
+ *  Copyright 2012 jQuery Foundation and other contributors
+ *  Released under the MIT license
+ *  http://sizzlejs.com/
  */
 (function( window, undefined ) {
 
@@ -3709,7 +3710,7 @@ var cachedruns,
 	operators = "([*^$|!~]?=)",
 	attributes = "\\[" + whitespace + "*(" + characterEncoding + ")" + whitespace +
 		"*(?:" + operators + whitespace + "*(?:(['\"])((?:\\\\.|[^\\\\])*?)\\3|(" + identifier + ")|)|)" + whitespace + "*\\]",
-	pseudos = ":(" + characterEncoding + ")(?:\\((?:(['\"])((?:\\\\.|[^\\\\])*?)\\2|(.*))\\)|)",
+	pseudos = ":(" + characterEncoding + ")(?:\\((?:(['\"])((?:\\\\.|[^\\\\])*?)\\2|((?:[^,]|\\\\,|(?:,(?=[^\\[]*\\]))|(?:,(?=[^\\(]*\\))))*))\\)|)",
 	pos = ":(nth|eq|gt|lt|first|last|even|odd)(?:\\((\\d*)\\)|)(?=[^-]|$)",
 	combinators = whitespace + "*([\\x20\\t\\r\\n\\f>+~])" + whitespace + "*",
 	groups = "(?=[^\\x20\\t\\r\\n\\f])(?:\\\\.|" + attributes + "|" + pseudos.replace( 2, 7 ) + "|[^\\\\(),])+",
@@ -4712,7 +4713,11 @@ function handlePOS( selector, context, results, seed, groups ) {
 			ret = ret.concat( elements );
 
 			if ( (part = selector.slice( anchor )) && part !== ")" ) {
-				multipleContexts( part, ret, results, seed );
+				if ( rcombinators.test(part) ) {
+					multipleContexts( part, ret, results, seed );
+				} else {
+					Sizzle( part, context, results, seed ? seed.concat(elements) : elements );
+				}
 			} else {
 				push.apply( results, ret );
 			}
@@ -4808,7 +4813,7 @@ function addCombinator( matcher, combinator, context ) {
 			while ( (elem = elem[ dir ]) ) {
 				if ( elem.nodeType === 1 ) {
 					if ( (cache = elem[ expando ]) === cachedkey ) {
-						return false;
+						return elem.sizset;
 					} else if ( typeof cache === "string" && cache.indexOf(dirkey) === 0 ) {
 						if ( elem.sizset ) {
 							return elem;
@@ -4871,7 +4876,6 @@ var compile = Sizzle.compile = function( selector, context, xml ) {
 
 	// Return a cached group function if already generated (context dependent)
 	if ( cached && cached.context === context ) {
-		cached.dirruns++;
 		return cached;
 	}
 
@@ -4967,7 +4971,7 @@ var select = function( selector, context, results, seed, xml ) {
 	// If selector is empty, we're already done
 	if ( selector ) {
 		matcher = compile( selector, context, xml );
-		dirruns = matcher.dirruns;
+		dirruns = matcher.dirruns++;
 
 		if ( elements == null ) {
 			elements = Expr.find["TAG"]( "*", (rsibling.test( selector ) && context.parentNode) || context );
@@ -5183,12 +5187,12 @@ jQuery.fn.extend({
 	},
 
 	has: function( target ) {
-		var i = 0,
+		var i,
 			targets = jQuery( target, this ),
-			l = targets.length;
+			len = targets.length;
 
 		return this.filter(function() {
-			for ( ; i < l; i++ ) {
+			for ( i = 0; i < len; i++ ) {
 				if ( jQuery.contains( this, targets[i] ) ) {
 					return true;
 				}
@@ -5792,7 +5796,7 @@ jQuery.fn.extend({
 								dataType: "script",
 								async: false,
 								global: false,
-								throws: true
+								"throws": true
 							});
 						} else {
 							jQuery.error("no ajax");
@@ -6856,7 +6860,8 @@ if ( !jQuery.support.opacity ) {
 			style.zoom = 1;
 
 			// if setting opacity to 1, and no other filters exist - attempt to remove filter attribute #6652
-			if ( value >= 1 && jQuery.trim( filter.replace( ralpha, "" ) ) === "" ) {
+			if ( value >= 1 && jQuery.trim( filter.replace( ralpha, "" ) ) === "" &&
+				style.removeAttribute ) {
 
 				// Setting style.filter to null, "" & " " still leave "filter:" in the cssText
 				// if "filter:" is present at all, clearType is disabled, we want to avoid this
@@ -7914,7 +7919,7 @@ function ajaxConvert( s, response ) {
 				if ( conv !== true ) {
 
 					// Unless errors are allowed to bubble, catch and return them
-					if ( conv && s.throws ) {
+					if ( conv && s["throws"] ) {
 						response = conv( response );
 					} else {
 						try {

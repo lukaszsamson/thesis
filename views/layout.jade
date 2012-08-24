@@ -9,13 +9,15 @@ html(lang="en")
     link(rel='stylesheet', href='/css/bootstrap-responsive.css')
     
 
-    script(type='text/javascript', src='/js/jquery-1.8rc1.js')
-    script(type='text/javascript', src='/js/bootstrap.js')
-    script(type='text/javascript', src='/js/script.js')
+    script(type='text/javascript', src='/js/jquery-1.8.0.js')
+
     
   body
     include header
     .container.main
       block content
     include footer
+
+    script(type='text/javascript', src='/js/bootstrap.js')
+    script(type='text/javascript', src='/js/script.js')
     
