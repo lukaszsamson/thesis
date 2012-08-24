@@ -61,25 +61,25 @@ class GraphClient
     )
 
   getAppUserUrl: ->
-    'https://graph.facebook.com/me?access_token=' + encodeURIComponent @access_token
+    "https://graph.facebook.com/me?access_token=#{encodeURIComponent @access_token}"
 
   getFriendUrl: (id) ->
-    'https://graph.facebook.com/' + encodeURIComponent(id) + '?access_token=' + encodeURIComponent @access_token
+    "https://graph.facebook.com/#{encodeURIComponent(id)}?access_token=#{encodeURIComponent @access_token}"
 
   getFriendsUrl: ->
-    'https://graph.facebook.com/me/friends?access_token=' + encodeURIComponent @access_token
+    "https://graph.facebook.com/me/friends?access_token=#{encodeURIComponent @access_token}"
 
   getMutualFriendsUrl: (facebookId) ->
-    'https://graph.facebook.com/me/mutualfriends/' + encodeURIComponent(facebookId) + '?access_token=' + encodeURIComponent @access_token
+    "https://graph.facebook.com/me/mutualfriends/#{encodeURIComponent(facebookId)}?access_token=#{encodeURIComponent @access_token}"
 
   getLinksUrl: (facebookId) ->
-    'https://graph.facebook.com/' + encodeURIComponent(facebookId) + '/links?access_token=' + encodeURIComponent @access_token
+    "https://graph.facebook.com/#{encodeURIComponent(facebookId)}/links?access_token=#{encodeURIComponent @access_token}"
 
   getLikesUrl: (facebookId) ->
-    'https://graph.facebook.com/' + encodeURIComponent(facebookId) + '/likes?access_token=' + encodeURIComponent @access_token
+    "https://graph.facebook.com/#{encodeURIComponent(facebookId)}/likes?access_token=#{encodeURIComponent @access_token}"
     
   getlogOutUrl: (redirectUrl) ->
-    'https://www.facebook.com/logout.php?next=' + encodeURIComponent(redirectUrl) + '&access_token=' + encodeURIComponent @access_token
+    "https://www.facebook.com/logout.php?next=#{encodeURIComponent(redirectUrl)}'&access_token=#{encodeURIComponent @access_token}"
 
 #TODO csrf by state param
 facebookAuth = (config) ->

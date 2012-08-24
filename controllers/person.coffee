@@ -68,18 +68,6 @@ exports.getData = (req, res, next) ->
   )
 
 
-###
-function NotFound(msg) {
-  Error.call(this);
-  Error.captureStackTrace(this, arguments.callee);
-  this.name = 'NotFound';
-  this.message = msg;
-}
-
-NotFound.prototype.__proto__ = Error.prototype;
-###
-
-
 exports.friend = (req, res) ->
   facebookId = req.params.id
   Person.findOne
