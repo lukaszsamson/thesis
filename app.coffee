@@ -1,6 +1,5 @@
 express = require 'express'
-#stylus = require 'stylus'
-#assets = require 'connect-assets'
+http = require 'http'
 
 mongoose = require('mongoose')
 
@@ -28,8 +27,6 @@ app.use (require './utils/graph-client').facebookAuth
 app.get '/', (req, resp) ->
   resp.render 'index'
 
-test = require './controllers/test'
-app.get '/test/', test.index
 
 person = require './controllers/person'
 app.get '/person', person.index
@@ -46,5 +43,6 @@ app.use express.errorHandler
   dumpExceptions: true
   showStack: true
 
-app.listen process.env.VMC_APP_PORT or 3000, ->
-  console.log 'Listening...'
+server = http.createServer(app)
+server.listen process.env.VMC_APP_PORT or 3000, ->
+  console.log "Listening on #{server.address().address}:#{server.address().port}"
