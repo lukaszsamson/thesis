@@ -2,33 +2,39 @@ express = require 'express'
 http = require 'http'
 
 mongoose = require('mongoose')
+RedisStore = require('connect-redis')(express)
 
 db = mongoose.connect 'mongodb://localhost/test'
 
 app = express()
-#app.use assets()
+
 app.set 'view engine', 'jade'
-app.set 'facebook app id', '102219526568766'
-app.set 'facebook app secret', 'ee755ea1ef4ab900bb46b497d5a93ca0'
-app.set 'facebook redirect', 'http://localhost:3000/'
-app.set 'facebook scope', 'read_stream'
+
 app.use express.cookieParser 'shoop da woop'
-app.use express.session()
+app.use express.session({
+  cookie:
+    path: '/'
+    httpOnly: true
+    maxAge: 3600000 # 1 hour
+  store: new RedisStore(
+    #host: 'localhost'
+    #port: ''
+    ttl: 3600 # 1 hour
+  )
+})
 
 app.use express.logger()
 app.use express.bodyParser()
 
-auth = (require './utils/graph-client').facebookAuth
+oauthClient = require './utils/oauth-client'
+auth = oauthClient.authenticate
   appId: '102219526568766'
   appSecret: 'ee755ea1ef4ab900bb46b497d5a93ca0'
-  redirectUri: 'http://localhost:3000/person'
   scope: 'read_stream'
 
-app.get '/', (req, resp, error) ->
-  e = new Error("test")
-  e.status = 404
-  error(e)
-
+index = require './controllers/index'
+app.get '/', oauthClient.redirector('/person'), index.index
+app.post '/logOut', oauthClient.logOut
 
 person = require './controllers/person'
 app.get '/person', auth, person.index

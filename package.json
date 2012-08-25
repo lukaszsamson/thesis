@@ -9,6 +9,7 @@
     "kue": "*",
     "async": "*",
     "redis": "*",
+    "connect-redis": "*",
     "coffee-script": "*",
     "jade": "*"
   },

@@ -1,18 +1,20 @@
-.navbar.navbar-fixed-top
+.navbar.navbar-inverse.navbar-fixed-top
   .navbar-inner
-    .container-fluid
+    .container
       a(data-toggle='collapse',data-target='.nav-collapse').btn.btn-navbar
         span.icon-bar
         span.icon-bar
         span.icon-bar
       a(href='#').brand #{title}
-      nav.nav-collapse
+      .nav-collapse.collapse
         ul.nav
-          - var obj = { '/person': 'Person' }
-          - each val, key in obj
+          - each val, key in menu
             - if (id == key) 
               li.active
                 a(href='#{key}') #{val}
             - else
               li
                 a(href='#{key}') #{val}
+        - if (loggedIn)
+          form.navbar-form.pull-right(method='post', action='/logOut/')
+            button.btn(type='submit') Log out

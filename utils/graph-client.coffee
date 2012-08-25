@@ -1,5 +1,4 @@
 request = require './simple-request'
-querystring = require 'querystring'
 
 class GraphClient
   constructor: (@access_token) ->
@@ -78,42 +77,10 @@ class GraphClient
   getLikesUrl: (facebookId) ->
     "https://graph.facebook.com/#{encodeURIComponent(facebookId)}/likes?access_token=#{encodeURIComponent @access_token}"
     
-  getlogOutUrl: (redirectUrl) ->
-    "https://www.facebook.com/logout.php?next=#{encodeURIComponent(redirectUrl)}'&access_token=#{encodeURIComponent @access_token}"
 
-#TODO csrf by state param
-facebookAuth = (config) ->
-  getDialogUrl = (appId, redirectUri, scope) ->
-    path = 'https://www.facebook.com/dialog/oauth?'
-    queryParams = ['client_id=' + encodeURIComponent(appId), 'redirect_uri=' + encodeURIComponent(redirectUri), 'scope=' + encodeURIComponent(scope), ];
-    query = queryParams.join '&'
-    path + query
 
-  getAccessTokenUrl = (appId, redirectUri, appSecret, code) ->
-    path = 'https://graph.facebook.com/oauth/access_token?'
-    queryParams = ['client_id=' + encodeURIComponent(appId), 'redirect_uri=' + encodeURIComponent(redirectUri), 'client_secret=' + encodeURIComponent(appSecret), 'code=' + encodeURIComponent(code)];
-    query = queryParams.join '&'
-    path + query;
 
-  auth = (req, res, next) ->
-    if req.session.facebookToken and Date.parse(req.session.facebookToken.expiresDate) > new Date
-      return next()
-    code = req.query.code
-    if not code
-      return res.redirect getDialogUrl(config.appId, req.protocol + '://' + req.headers.host + req.url, config.scope)
-
-    request getAccessTokenUrl(config.appId, config.redirectUri, config.appSecret, code), (error, body) ->
-      return next error if error
-      try
-        req.session.facebookToken = querystring.parse body
-        d = new Date
-        d.setSeconds(d.getSeconds() + req.session.facebookToken.expires)
-        req.session.facebookToken.expiresDate = d
-        return res.redirect req.protocol + '://' + req.headers.host + req.url.split('?')[0]
-      catch e
-        return next e
 
 module.exports = {
-  Graph: GraphClient,
-  facebookAuth: facebookAuth
+  Graph: GraphClient
 }

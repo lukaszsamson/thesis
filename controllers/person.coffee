@@ -35,6 +35,12 @@ exports.links = (req, res, next) ->
     res.render('person/links', {
       title: 'Links'
       id: '/links'
+      menu:
+        '/person': 'Person'
+        '/person/links': 'Links'
+        '/person/likes/byName': 'Likes by name'
+        '/person/likes/byCategory': 'Likes by category'
+      loggedIn: loggedIn: req.loggedIn?
       links: links
     })
 
@@ -44,6 +50,12 @@ exports.likesByName = (req, res, next) ->
     res.render('person/likes', {
       title: 'Likes by name'
       id: '/likes/byName'
+      menu:
+        '/person': 'Person'
+        '/person/links': 'Links'
+        '/person/likes/byName': 'Likes by name'
+        '/person/likes/byCategory': 'Likes by category'
+      loggedIn: loggedIn: req.loggedIn?
       likes: likes
     })
 
@@ -53,6 +65,12 @@ exports.likesByCategory = (req, res, next) ->
     res.render('person/likes', {
       title: 'Likes by category'
       id: '/likes/byCategory'
+      menu:
+        '/person': 'Person'
+        '/person/links': 'Links'
+        '/person/likes/byName': 'Likes by name'
+        '/person/likes/byCategory': 'Likes by category'
+      loggedIn: loggedIn: req.loggedIn?
       likes: likes
     })
     
@@ -60,6 +78,12 @@ exports.index = (req, res) ->
   res.render 'person/index', {
     title: 'Person'
     id: '/person'
+    menu:
+      '/person': 'Person'
+      '/person/links': 'Links'
+      '/person/likes/byName': 'Likes by name'
+      '/person/likes/byCategory': 'Likes by category'
+    loggedIn: loggedIn: req.loggedIn?
   }
 exports.getData = (req, res, next) ->  
   jobs.getAppUser(getToken(req), (e) ->
