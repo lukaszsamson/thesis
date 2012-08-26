@@ -16,5 +16,8 @@ block content
           td= link._id
           td= link.value.count
           td
-            each share in link.value.sharedBy
-              = share + ', '
+            dl
+              each share in link.value.sharedBy
+                dd= share.id
+                dt= share.date
+

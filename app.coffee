@@ -8,19 +8,21 @@ db = mongoose.connect 'mongodb://localhost/test'
 
 app = express()
 
-app.set 'view engine', 'jade'
 
-app.use express.cookieParser 'shoop da woop'
+app.set 'view engine', 'jade'
+cookieParser = express.cookieParser 'shoop da woop'
+app.use cookieParser
+sessionStore = new RedisStore(
+  #host: 'localhost'
+  #port: ''
+  ttl: 3600 # 1 hour
+)
 app.use express.session({
   cookie:
     path: '/'
     httpOnly: true
     maxAge: 3600000 # 1 hour
-  store: new RedisStore(
-    #host: 'localhost'
-    #port: ''
-    ttl: 3600 # 1 hour
-  )
+  store: sessionStore
 })
 
 app.use express.logger()
@@ -50,6 +52,10 @@ app.use express.static __dirname + '/public'
 
 app.use express.errorHandler()
 
+
 server = http.createServer(app)
+
+require('./utils/socket-communicator').setup(server, sessionStore, cookieParser)
+
 server.listen process.env.VMC_APP_PORT or 3000, ->
   console.log "Listening on #{server.address().address}:#{server.address().port}"

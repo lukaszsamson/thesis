@@ -69,6 +69,7 @@ PersonSchema.statics.updateLinks = (personId, links, done) ->
             facebookId: link.id
             name: link.name ? ''
             message: link.message ? ''
+            created_time: new Date(Date.parse(link.created_time))
           )
         )
       }
@@ -89,6 +90,7 @@ PersonSchema.statics.updateFriendLinks = (personId, friendId, links, done) ->
             facebookId: link.id
             name: link.name ? ''
             message: link.message ? ''
+            created_time: new Date(Date.parse(link.created_time))
           )
         )
       }
@@ -107,6 +109,7 @@ PersonSchema.statics.updateLikes = (personId, likes, done) ->
             facebookId: like.id
             name: like.name ? ''
             category: like.category ? ''
+            created_time: new Date(Date.parse(like.created_time))
           )
         )
       }
@@ -126,6 +129,7 @@ PersonSchema.statics.updateFriendLikes = (personId, friendId, likes, done) ->
             facebookId: like.id
             name: like.name ? ''
             category: like.category ? ''
+            created_time: new Date(Date.parse(like.created_time))
           )
         )
       }
@@ -247,13 +251,19 @@ links = {}
 links.m = () ->
   @links.forEach (link) =>
     emit(link.link, {
-      sharedBy: [@facebookId]
+      sharedBy: [{
+          id: @facebookId
+          date: link.created_time
+        }]
       count: 1
     })
   @friends.forEach (friend) ->
     friend.links.forEach (link) ->
       emit(link.link, {
-        sharedBy: [friend.facebookId]
+        sharedBy: [{
+          id: friend.facebookId
+          date: link.created_time
+        }]
         count: 1
       })
     
@@ -267,7 +277,15 @@ links.r = (key, values) ->
     count: count
     sharedBy: sharedBy
   }
- 
+links.f = (key, value) ->
+  value.sharedBy.sort (a, b) ->
+    if a.date < b.date
+      return -1;
+    if a.date < b.date
+      return 1;
+    return 0
+
+  return value
 
  
 likes = {}
@@ -345,7 +363,7 @@ PersonSchema.statics.getLikesByCategory = (callback) ->
 #friendSchema.post 'save', (next) ->
 PersonSchema.statics.countLinks = (callback) ->
   this.collection.mapReduce(links.m, links.r, {
-    #finalize: f
+    finalize: links.f
     out: 'links'
   }, callback)
 

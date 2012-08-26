@@ -12,8 +12,6 @@ html(lang="en")
     link(rel='stylesheet', href='/css/bootstrap.css')
     link(rel='stylesheet', href='/css/bootstrap-responsive.css')
 
-    script(type='text/javascript', src='/js/jquery-1.8.0.js')
-
   body
 
     include header
@@ -25,6 +23,8 @@ html(lang="en")
 
     include modal
 
-    script(type='text/javascript', src='/js/bootstrap.js')
-    script(type='text/javascript', src='/js/build/script.js')
+    script(src='/js/jquery-1.8.0.js')
+    script(src='/js/bootstrap.js')
+    script(src="/socket.io/socket.io.js")
+    script(src='/js/build/script.js')
     

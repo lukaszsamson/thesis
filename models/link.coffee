@@ -8,6 +8,7 @@ LinkSchema = new Schema
   link: String
   name: String
   message: String
+  created_time: Date
 
 
 module.exports = mongoose.model 'Link', LinkSchema

@@ -10,6 +10,7 @@
     "async": "*",
     "redis": "*",
     "connect-redis": "*",
+    "socket.io": "*",
     "coffee-script": "*",
     "jade": "*"
   },

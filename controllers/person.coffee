@@ -5,29 +5,39 @@ util = require 'util'
 jobs = require('../utils/jobs')
 
 
-exports.logOutFromFacebook = (req, res) ->
-  delete req.session.facebookToken
 
 exports.deleteFacebookData = (req, res, next) ->
   Person.remove({facebookId: facebookId}, (e) ->
     next(e) if e
-    res.send 200
+    res.send 200, {
+      header: 'Info'
+      body: 'Data deleted.'
+    }
   )
 
 exports.countLinks = (req, res, next) ->
-  jobs.countLinks (e) ->
+  jobs.countLinks req.sessionID, (e) ->
     return next(e) if e
-    res.send 200
+    res.send 200, {
+      header: 'Info'
+      body: 'Count links requested.'
+    }
 
 exports.countLikesByName = (req, res, next) ->
-  jobs.countLikesByName (e) ->
+  jobs.countLikesByName req.sessionID, (e) ->
     return next(e) if e
-    res.send 200
+    res.send 200, {
+      header: 'Info'
+      body: 'Count likes by name requested.'
+    }
 
 exports.countLikesByCategory = (req, res, next) ->
-  jobs.countLikesByCategory (e) ->
+  jobs.countLikesByCategory req.sessionID, (e) ->
     return next(e) if e
-    res.send 200
+    res.send 200, {
+      header: 'Info'
+      body: 'Count likes by category requested.'
+    }
     
 exports.links = (req, res, next) ->
   Person.getLinks (e, links) ->
@@ -86,9 +96,12 @@ exports.index = (req, res) ->
     loggedIn: loggedIn: req.loggedIn?
   }
 exports.getData = (req, res, next) ->  
-  jobs.getAppUser(getToken(req), (e) ->
+  jobs.getAppUser( req.sessionID, req.session.facebookToken.access_token, (e) ->
     return next(e) if e
-    res.send 200
+    res.send 200, {
+      header: 'Info'
+      body: 'Data requested.'
+    }
   )
 
 
@@ -110,8 +123,6 @@ exports.friends = (req, res) ->
       friends: result
 
 
-getToken = (req) ->
-  return req.session.facebookToken.access_token if req.session.facebookToken
 
 
 

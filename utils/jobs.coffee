@@ -5,35 +5,52 @@ async = require 'async'
 Graph = require('../utils/graph-client').Graph
 User = require '../models/user'
 Person = require '../models/person'
+sio = require('./socket-communicator')
 
-exports.countLinks = (done) ->
+exports.countLinks = (sessionID, done) ->
   console.log 'Creating countLinks job'
   jobs.create('countLinks', {
     title: 'Counting links'
+    sessionID: sessionID
   }).save done
 
 jobs.process 'countLinks', 3, (job, done) ->
-  Person.countLinks(done)
+  Person.countLinks (error) ->
+    return done(error) if error
+    sio.sendVolatile(job.data.sessionID, 'jobCompleted', {
+      header: "Success"
+      body: "Count links job has heen completed"
+    }, done)
 
-exports.countLikesByName = (done) ->
+exports.countLikesByName = (sessionID, done) ->
   console.log 'Creating countLikes job'
   jobs.create('countLikesByName', {
     title: 'Counting likes'
   }).save done
 
 jobs.process 'countLikesByName', 3, (job, done) ->
-  Person.countLikesByName(done)
+  Person.countLikesByName(error) ->
+    return done(error) if error
+    sio.sendVolatile(job.data.sessionID, 'jobCompleted', {
+      header: "Success"
+      body: "Count likes by name job has heen completed"
+    }, done)
 
-exports.countLikesByCategory = (done) ->
+exports.countLikesByCategory = (sessionID, done) ->
   console.log 'Creating countLikes job'
   jobs.create('countLikesByCategory', {
     title: 'Counting likes'
   }).save done
 
 jobs.process 'countLikesByCategory', 3, (job, done) ->
-  Person.countLikesByCategory(done)
+  Person.countLikesByCategory(error) ->
+    return done(error) if error
+    sio.sendVolatile(job.data.sessionID, 'jobCompleted', {
+      header: "Success"
+      body: "Count likes by category job has heen completed"
+    }, done)
   
-exports.getAppUser = (access_token, done) ->
+exports.getAppUser = (sessionID, access_token, done) ->
   console.log 'Creating getAppUser job'
   jobs.create('getAppUser',
     title: 'Getting app user'
@@ -51,7 +68,12 @@ jobs.process('getAppUser', 3, (job, done) ->
         (c2) -> getLinks(appUser, job.data.access_token, c2),
         (c2) -> getLikes(appUser, job.data.access_token, c2),
         (c2) -> getFriends(appUser, job.data.access_token, c2)
-      ], c1)
+      ], c1),
+      (c1) ->
+        sio.sendVolatile(job.data.sessionID, 'jobCompleted', {
+          header: "Success"
+          body: "Data recieved. Note that some operations are still pending."
+        }, c1)
     ], c0)
   ], done))
 

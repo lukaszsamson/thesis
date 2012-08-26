@@ -8,6 +8,8 @@ showModal = (header, body) ->
 $ () ->
   $(document).ajaxError (event, jqXHR, ajaxSettings, thrownError) ->
       showModal "#{jqXHR.status}: #{jqXHR.statusText}", jqXHR.responseText
+  socket = io.connect document.location.origin
+  socket.on('jobCompleted', (data) -> showModal data.header, data.body)
   $('#getData').click () ->
     $.ajax
       url: '/person/getData'
