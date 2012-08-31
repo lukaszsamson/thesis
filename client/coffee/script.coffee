@@ -58,3 +58,9 @@ $ () ->
         showModal data.header, data.body
 
 
+  $('#findLinkFlows').click () ->
+    $.ajax
+      url: '/person/mapReduce/findLinkFlows/request'
+      type: 'POST'
+      success: (data, textStatus, jqXHR) ->
+        showModal data.header, data.body

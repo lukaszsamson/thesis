@@ -43,7 +43,8 @@ findConnections.m = () ->
 
 findConnections.r = reduceNoop
 
-m = () ->
+operations.findLinkFlows = findLinkFlows = {}
+findLinkFlows.m = () ->
   links = {}
   @links.forEach (l) =>
     share = {
@@ -51,9 +52,9 @@ m = () ->
     friends: @friends.map (f) -> f.facebookId
     date: l.create_date
     }
-    if not links[l]
-      links[l] = []
-    links[l].push share
+    if not links[l.link]
+      links[l.link] = []
+    links[l.link].push share
   @friends.forEach (f) =>
     f.links.forEach (l) =>
       share = {
@@ -61,9 +62,9 @@ m = () ->
       friends: [@facebookId].concat(f.mutualFriends.map (mf) -> mf.facebookId)
       date: l.create_date
       }
-      if not links[l]
-        links[l] = []
-      links[l].push share
+      if not links[l.link]
+        links[l.link] = []
+      links[l.link].push share
 
   order = (a, b) ->
     if a.date < b.date
@@ -83,7 +84,9 @@ m = () ->
           if not flows[a[i].id][a[j].id]
             flows[a[i].id][a[j].id] = 0
           flows[a[i].id][a[j].id]++
-  return flows
+  emit(@facebookId, flows)
+
+findLinkFlows.r = reduceNoop
 
 exports.validate = (operation) ->
   return operations[operation]
