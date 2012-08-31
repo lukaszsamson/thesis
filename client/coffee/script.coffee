@@ -37,3 +37,18 @@ $ () ->
       type: 'POST'
       success: (data, textStatus, jqXHR) ->
           showModal 'Data requested', 'Your data will be ready soon.'
+  $('#logisticRegressionOnLinks').click () ->
+    $.ajax
+      url: '/person/logisticRegressionOnLinks'
+      type: 'POST'
+      success: (data, textStatus, jqXHR) ->
+        showModal 'Data requested', 'Your data will be ready soon.'
+  $('#countLinksHistogram').click () ->
+    $.ajax
+      url: '/person/links/histogram/count'
+      type: 'POST'
+      success: (data, textStatus, jqXHR) ->
+        showModal 'Data requested', 'Your data will be ready soon.'
+
+
+

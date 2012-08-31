@@ -1,15 +1,9 @@
 extends ../layout
 
 block content
-  .span3
-    nav.well.sidebar-nav
-      ul.nav.nav-list
-        li
-          a(href="/person/get")
-            i.icon-plus
-            = 'Create new'
-        li.nav-header Created
-  .span5
+  #chart.span8
+
+  .span8
     table
       each like in likes
         tr
@@ -18,3 +12,6 @@ block content
           td
             each share in like.value.sharedBy
               = share + ', '
+
+
+

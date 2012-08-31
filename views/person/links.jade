@@ -5,10 +5,11 @@ block content
     nav.well.sidebar-nav
       ul.nav.nav-list
         li
-          a(href="/person/get")
+          a#showLinksHistogram(href="#")
             i.icon-plus
-            = 'Create new'
+            = 'Histogram'
         li.nav-header Created
+  #chart.span5
   .span5
     table
       each link in links
@@ -21,3 +22,5 @@ block content
                 dd= share.id
                 dt= share.date
 
+  script(src='/js/d3.v2.js')
+  script(src='/js/build/linksHistogram.js')

@@ -48,6 +48,11 @@ app.get '/person/likes/byName', auth, person.likesByName
 app.post '/person/countLikes/byCategory', auth, person.countLikesByCategory
 app.get '/person/likes/byCategory', auth, person.likesByCategory
 
+app.post '/person/links/histogram/count', auth, person.countLinksHistogram
+app.get '/person/links/histogram', auth, person.getLinksHistogram
+
+app.post '/person/logisticRegressionOnLinks', auth, person.logisticRegressionOnLinks
+
 app.use express.static __dirname + '/public'
 
 app.use express.errorHandler()

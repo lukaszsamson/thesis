@@ -1,5 +1,6 @@
 request = require './simple-request'
 querystring = require 'querystring'
+Graph = require('./graph-client').Graph
 
 validateSession = (session) -> session.facebookToken and Date.parse(session.facebookToken.expiresDate) > new Date
 
@@ -58,7 +59,11 @@ exports.authenticate = (config) ->
           d = new Date
           d.setSeconds(d.getSeconds() + req.session.facebookToken.expires)
           req.session.facebookToken.expiresDate = d
-          return res.redirect redirectURI.split('?')[0]
+          (new Graph(req.session.facebookToken.access_token)).getAppUser((error, user) ->
+            return next error if error
+            req.session.facebookData = user
+            return res.redirect redirectURI.split('?')[0]
+          )
         catch e
           return next e
 

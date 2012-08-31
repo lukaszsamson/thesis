@@ -7,13 +7,29 @@ jobs = require('../utils/jobs')
 
 
 exports.deleteFacebookData = (req, res, next) ->
-  Person.remove({facebookId: facebookId}, (e) ->
+  Person.remove({facebookId: req.session.facebookData.id}, (e) ->
     next(e) if e
     res.send 200, {
       header: 'Info'
       body: 'Data deleted.'
     }
   )
+
+exports.countLinksHistogram = (req, res, next) ->
+  jobs.countLinksHistogram req.sessionID, (e) ->
+    return next(e) if e
+    res.send 200, {
+    header: 'Info'
+    body: 'Count links histogram requested.'
+    }
+
+exports.logisticRegressionOnLinks = (req, res, next) ->
+  jobs.logisticRegressionOnLinks req.sessionID, (e) ->
+    return next(e) if e
+    res.send 200, {
+    header: 'Info'
+    body: 'Logistic regression on links requested.'
+    }
 
 exports.countLinks = (req, res, next) ->
   jobs.countLinks req.sessionID, (e) ->
@@ -22,6 +38,7 @@ exports.countLinks = (req, res, next) ->
       header: 'Info'
       body: 'Count links requested.'
     }
+
 
 exports.countLikesByName = (req, res, next) ->
   jobs.countLikesByName req.sessionID, (e) ->
@@ -38,7 +55,16 @@ exports.countLikesByCategory = (req, res, next) ->
       header: 'Info'
       body: 'Count likes by category requested.'
     }
-    
+
+exports.getLinksHistogram = (req, res, next) ->
+  Person.getLinksHistogram req.session.facebookData.id, (e, hg) ->
+    return next(e) if e
+    if not hg
+      er = new Error("Not found")
+      er.status = 404
+      return next(er)
+    res.send(hg.value)
+
 exports.links = (req, res, next) ->
   Person.getLinks (e, links) ->
     return next(e) if e

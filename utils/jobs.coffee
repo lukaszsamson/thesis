@@ -7,6 +7,36 @@ User = require '../models/user'
 Person = require '../models/person'
 sio = require('./socket-communicator')
 
+exports.countLinksHistogram = (sessionID, done) ->
+  console.log 'Creating countLinks job'
+  jobs.create('countLinksHistogram', {
+  title: 'Counting links histogram'
+  sessionID: sessionID
+  }).save done
+
+jobs.process 'countLinksHistogram', 3, (job, done) ->
+  Person.countLinksHistogram (error) ->
+    return done(error) if error
+    sio.sendVolatile(job.data.sessionID, 'jobCompleted', {
+    header: "Success"
+    body: "Count links histogram job has heen completed"
+    }, done)
+
+exports.logisticRegressionOnLinks = (sessionID, done) ->
+  console.log 'Creating logisticRegressionOnLinks job'
+  jobs.create('logisticRegressionOnLinks', {
+  title: 'Counting logisticRegressionOnLinks'
+  sessionID: sessionID
+  }).save done
+
+jobs.process 'logisticRegressionOnLinks', 3, (job, done) ->
+  Person.logisticRegressionOnLinks (error) ->
+    return done(error) if error
+    sio.sendVolatile(job.data.sessionID, 'jobCompleted', {
+    header: "Success"
+    body: "Logistic regression on links job has heen completed"
+    }, done)
+
 exports.countLinks = (sessionID, done) ->
   console.log 'Creating countLinks job'
   jobs.create('countLinks', {
