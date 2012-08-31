@@ -39,19 +39,29 @@ app.get '/', oauthClient.redirector('/person'), index.index
 app.post '/logOut', oauthClient.logOut
 
 person = require './controllers/person'
-app.get '/person', auth, person.index
-app.post '/person/getData', auth, person.getData
-app.post '/person/countLinks', auth, person.countLinks
-app.get '/person/links', auth, person.links
-app.post '/person/countLikes/byName', auth, person.countLikesByName
-app.get '/person/likes/byName', auth, person.likesByName
-app.post '/person/countLikes/byCategory', auth, person.countLikesByCategory
-app.get '/person/likes/byCategory', auth, person.likesByCategory
 
-app.post '/person/links/histogram/count', auth, person.countLinksHistogram
-app.get '/person/links/histogram', auth, person.getLinksHistogram
+app.all '/person/*', auth
 
-app.post '/person/logisticRegressionOnLinks', auth, person.logisticRegressionOnLinks
+app.get '/person', person.index
+
+app.get '/person/friends', person.friends
+
+app.post '/person/getData', person.getData
+app.post '/person/countLinks', person.countLinks
+app.get '/person/links', person.links
+app.post '/person/countLikes/byName', person.countLikesByName
+app.get '/person/likes/byName', person.likesByName
+app.post '/person/countLikes/byCategory', person.countLikesByCategory
+app.get '/person/likes/byCategory', person.likesByCategory
+
+app.post '/person/links/histogram/count', person.countLinksHistogram
+app.get '/person/links/histogram', person.getLinksHistogram
+
+app.all  '/person/mapReduce/*', person.validateMapReduceOperation
+app.post '/person/mapReduce/:operation/request', person.mapReduce
+app.get  '/person/mapReduce/:operation/results', person.mapReduceResults
+
+app.post '/person/logisticRegressionOnLinks', person.logisticRegressionOnLinks
 
 app.use express.static __dirname + '/public'
 

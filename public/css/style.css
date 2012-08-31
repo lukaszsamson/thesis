@@ -17,3 +17,14 @@ padding-bottom: 60px;
     stroke: #000;
     shape-rendering: crispEdges;
 }
+
+
+circle.node {
+    stroke: #fff;
+    stroke-width: 1.5px;
+}
+
+line.link {
+    stroke: #999;
+    stroke-opacity: .6;
+}

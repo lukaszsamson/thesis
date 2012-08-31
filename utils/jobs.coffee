@@ -7,6 +7,24 @@ User = require '../models/user'
 Person = require '../models/person'
 sio = require('./socket-communicator')
 
+
+exports.mapReduceRequest = (operation, sessionID, done) ->
+  console.log "Creating map reduce job #{operation} created"
+  jobs.create('mapReduceRequest', {
+    title: "Map reduce #{operation}"
+    operation: operation
+    sessionID: sessionID
+  }).save done
+
+jobs.process 'mapReduceRequest', 1, (job, done) ->
+  Person.mapReduceRequest job.data.operation, (error) ->
+    return done(error) if error
+    sio.sendVolatile(job.data.sessionID, 'jobCompleted', {
+      header: "Success"
+      body: "#{job.data.operation} job has heen completed"
+    }, done)
+
+
 exports.countLinksHistogram = (sessionID, done) ->
   console.log 'Creating countLinks job'
   jobs.create('countLinksHistogram', {

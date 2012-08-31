@@ -4,6 +4,7 @@ Schema = mongoose.Schema
 Friend = require './friend'
 Link = require './link'
 Like = require './like'
+Transforms = require('../models/query')
 
 PersonSchema = new Schema
   facebookId: String
@@ -649,6 +650,24 @@ PersonSchema.statics.countLinksHistogram = (callback) ->
   }, callback)
 
 
+
+
+
+PersonSchema.statics.mapReduceResults = (operation, facebookId, callback) ->
+  mongoose.connection.db.collection operation, (err, collection) ->
+    return callback(err) if err
+    collection.findOne {_id: facebookId}, (err, result) ->
+      return callback(err) if err
+      callback(null, result)
+
+PersonSchema.statics.mapReduceRequest = (operation, callback) ->
+  transforms = Transforms[operation]
+  args = {
+    out: operation
+  }
+  if transforms.f
+    out['finalize'] = transforms.f
+  @collection.mapReduce(transforms.m, transforms.r, args, callback)
 
 Person = mongoose.model 'Person', PersonSchema
 module.exports = Person

@@ -50,5 +50,11 @@ $ () ->
       success: (data, textStatus, jqXHR) ->
         showModal 'Data requested', 'Your data will be ready soon.'
 
+  $('#findConnections').click () ->
+    $.ajax
+      url: '/person/mapReduce/findConnections/request'
+      type: 'POST'
+      success: (data, textStatus, jqXHR) ->
+        showModal data.header, data.body
 
 

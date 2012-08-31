@@ -4,7 +4,7 @@ Person = require '../models/person'
 util = require 'util'
 jobs = require('../utils/jobs')
 
-
+Transforms = require('../models/query')
 
 exports.deleteFacebookData = (req, res, next) ->
   Person.remove({facebookId: req.session.facebookData.id}, (e) ->
@@ -14,6 +14,32 @@ exports.deleteFacebookData = (req, res, next) ->
       body: 'Data deleted.'
     }
   )
+
+exports.validateMapReduceOperation = (req, res, next) ->
+  operation = req.params[0].split('/')[0]
+  req.operation = operation
+  if not Transforms.validate(operation)
+    error = new Error("Invalid operation #{operation}")
+    error.status = 403
+    return next(error)
+  next(null)
+
+exports.mapReduceResults = (req, res, next) ->
+  Person.mapReduceResults req.operation, req.session.facebookData.id, (e, results) ->
+    return next(e) if e
+    if not results
+      error = new Error("Not found")
+      error.status = 404
+      return next(error)
+    res.send(results.value)
+
+exports.mapReduce = (req, res, next) ->
+  jobs.mapReduceRequest req.operation, req.sessionID, (e) ->
+    return next(e) if e
+    res.send 200, {
+      header: 'Info'
+      body: "#{req.operation} requested."
+    }
 
 exports.countLinksHistogram = (req, res, next) ->
   jobs.countLinksHistogram req.sessionID, (e) ->
@@ -73,6 +99,7 @@ exports.links = (req, res, next) ->
       id: '/links'
       menu:
         '/person': 'Person'
+        '/person/friends': 'Friends'
         '/person/links': 'Links'
         '/person/likes/byName': 'Likes by name'
         '/person/likes/byCategory': 'Likes by category'
@@ -88,6 +115,7 @@ exports.likesByName = (req, res, next) ->
       id: '/likes/byName'
       menu:
         '/person': 'Person'
+        '/person/friends': 'Friends'
         '/person/links': 'Links'
         '/person/likes/byName': 'Likes by name'
         '/person/likes/byCategory': 'Likes by category'
@@ -103,6 +131,7 @@ exports.likesByCategory = (req, res, next) ->
       id: '/likes/byCategory'
       menu:
         '/person': 'Person'
+        '/person/friends': 'Friends'
         '/person/links': 'Links'
         '/person/likes/byName': 'Likes by name'
         '/person/likes/byCategory': 'Likes by category'
@@ -116,11 +145,26 @@ exports.index = (req, res) ->
     id: '/person'
     menu:
       '/person': 'Person'
+      '/person/friends': 'Friends'
       '/person/links': 'Links'
       '/person/likes/byName': 'Likes by name'
       '/person/likes/byCategory': 'Likes by category'
     loggedIn: loggedIn: req.loggedIn?
   }
+
+exports.friends = (req, res) ->
+  res.render 'person/friends', {
+    title: 'Friends'
+    id: '/person/friends'
+    menu:
+      '/person': 'Person'
+      '/person/friends': 'Friends'
+      '/person/links': 'Links'
+      '/person/likes/byName': 'Likes by name'
+      '/person/likes/byCategory': 'Likes by category'
+    loggedIn: loggedIn: req.loggedIn?
+  }
+
 exports.getData = (req, res, next) ->  
   jobs.getAppUser( req.sessionID, req.session.facebookToken.access_token, (e) ->
     return next(e) if e
@@ -131,22 +175,6 @@ exports.getData = (req, res, next) ->
   )
 
 
-exports.friend = (req, res) ->
-  facebookId = req.params.id
-  Person.findOne
-    facebookId: facebookId
-  , (error, result) ->
-    return res.error error if error
-    return self.error new NotFound util.format 'Friend with id %s does not exist', facebookId if not result
-    res.render
-      facebookId: facebookId
-      links: result.links
-
-exports.friends = (req, res) ->
-  Person.find (error, result) ->
-    return res.error error if error
-    res.render
-      friends: result
 
 
 
