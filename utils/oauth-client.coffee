@@ -48,6 +48,11 @@ exports.authenticate = (config) ->
       req.loggedIn = true
       return next()
 
+    if req.xhr
+      error = new Error('Forbidden')
+      error.status = 403
+      return next(error)
+
     #try to get api code from querystring
     redirectURI = req.protocol + '://' + req.headers.host + req.url
     code = req.query.code

@@ -46,30 +46,33 @@ findConnections.r = reduceNoop
 operations.findLinkFlows = findLinkFlows = {}
 findLinkFlows.m = () ->
   links = {}
+  names = {}
+  names[@facebookId] = @name
   @links.forEach (l) =>
     share = {
-    id: @facebookId
-    friends: @friends.map (f) -> f.facebookId
-    date: l.create_date
+      id: @facebookId
+      friends: @friends.map (f) -> f.facebookId
+      date: l.created_time
     }
     if not links[l.link]
       links[l.link] = []
     links[l.link].push share
   @friends.forEach (f) =>
+    names[f.facebookId] = f.name
     f.links.forEach (l) =>
       share = {
-      id: f.facebookId
-      friends: [@facebookId].concat(f.mutualFriends.map (mf) -> mf.facebookId)
-      date: l.create_date
+        id: f.facebookId
+        friends: [@facebookId].concat(f.mutualFriends.map (mf) -> mf.facebookId)
+        date: l.created_time
       }
       if not links[l.link]
         links[l.link] = []
       links[l.link].push share
 
   order = (a, b) ->
-    if a.date < b.date
+    if a.date > b.date
       return 1
-    if b.date < a.date
+    if b.date > a.date
       return -1
     return 0
 
@@ -84,7 +87,37 @@ findLinkFlows.m = () ->
           if not flows[a[i].id][a[j].id]
             flows[a[i].id][a[j].id] = 0
           flows[a[i].id][a[j].id]++
-  emit(@facebookId, flows)
+
+  axis = []
+  for i, v of flows
+    if not axis.some((a) -> a.id == i)
+      axis.push {
+        id: i
+        name: names[i]
+      }
+    for j, w of v
+      if not axis.some((a) -> a.id == j)
+        axis.push {
+          id: j
+          name: names[j]
+        }
+
+  result = []
+  for i in [0...axis.length]
+    result[i] = []
+    for j in [0...axis.length]
+      result[i][j] = if flows[axis[i].id] and flows[axis[i].id][axis[j].id] then flows[axis[i].id][axis[j].id] else 0
+
+  test = []
+  for i, a of links
+     test.push(a.map (s) -> s.date)
+
+  emit(@facebookId, {
+    test: test
+    matrix: result
+    axis: axis
+    flows: flows
+  })
 
 findLinkFlows.r = reduceNoop
 

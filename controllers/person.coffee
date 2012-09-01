@@ -101,6 +101,7 @@ exports.links = (req, res, next) ->
         '/person': 'Person'
         '/person/friends': 'Friends'
         '/person/links': 'Links'
+        '/person/links/chord': 'Links chord'
         '/person/likes/byName': 'Likes by name'
         '/person/likes/byCategory': 'Likes by category'
       loggedIn: loggedIn: req.loggedIn?
@@ -117,6 +118,7 @@ exports.likesByName = (req, res, next) ->
         '/person': 'Person'
         '/person/friends': 'Friends'
         '/person/links': 'Links'
+        '/person/links/chord': 'Links chord'
         '/person/likes/byName': 'Likes by name'
         '/person/likes/byCategory': 'Likes by category'
       loggedIn: loggedIn: req.loggedIn?
@@ -133,6 +135,7 @@ exports.likesByCategory = (req, res, next) ->
         '/person': 'Person'
         '/person/friends': 'Friends'
         '/person/links': 'Links'
+        '/person/links/chord': 'Links chord'
         '/person/likes/byName': 'Likes by name'
         '/person/likes/byCategory': 'Likes by category'
       loggedIn: loggedIn: req.loggedIn?
@@ -147,6 +150,7 @@ exports.index = (req, res) ->
       '/person': 'Person'
       '/person/friends': 'Friends'
       '/person/links': 'Links'
+      '/person/links/chord': 'Links chord'
       '/person/likes/byName': 'Likes by name'
       '/person/likes/byCategory': 'Likes by category'
     loggedIn: loggedIn: req.loggedIn?
@@ -160,12 +164,27 @@ exports.friends = (req, res) ->
       '/person': 'Person'
       '/person/friends': 'Friends'
       '/person/links': 'Links'
+      '/person/links/chord': 'Links chord'
       '/person/likes/byName': 'Likes by name'
       '/person/likes/byCategory': 'Likes by category'
     loggedIn: loggedIn: req.loggedIn?
   }
 
-exports.getData = (req, res, next) ->  
+exports.linksChord = (req, res) ->
+  res.render 'person/linksChord', {
+  title: 'Links chord'
+  id: '/person/links/chord'
+  menu:
+    '/person': 'Person'
+    '/person/friends': 'Friends'
+    '/person/links': 'Links'
+    '/person/links/chord': 'Links chord'
+    '/person/likes/byName': 'Likes by name'
+    '/person/likes/byCategory': 'Likes by category'
+  loggedIn: loggedIn: req.loggedIn?
+  }
+
+exports.getData = (req, res, next) ->
   jobs.getAppUser( req.sessionID, req.session.facebookToken.access_token, (e) ->
     return next(e) if e
     res.send 200, {

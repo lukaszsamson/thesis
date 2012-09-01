@@ -40,11 +40,12 @@ app.post '/logOut', oauthClient.logOut
 
 person = require './controllers/person'
 
-app.all '/person/*', auth
+app.all '/person*', auth
 
 app.get '/person', person.index
 
 app.get '/person/friends', person.friends
+app.get '/person/links/chord', person.linksChord
 
 app.post '/person/getData', person.getData
 app.post '/person/countLinks', person.countLinks
