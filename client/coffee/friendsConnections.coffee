@@ -13,7 +13,10 @@ svg = d3.select("#chart")
   .attr("width", width)
   .attr("height", height)
 
-d3.json("/person/mapReduce/findConnections/results", (json) ->
+d3.json("/person/mapReduce/friendsConnections/results", (json) ->
+  if not json
+    return window.showModal 'No data found', 'You have to request analysis first.'
+
   nodes = json.people
   connections = []
   for c in json.connections

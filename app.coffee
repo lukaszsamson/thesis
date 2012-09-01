@@ -34,35 +34,37 @@ auth = oauthClient.authenticate
   appSecret: 'ee755ea1ef4ab900bb46b497d5a93ca0'
   scope: 'read_stream'
 
-index = require './controllers/index'
-app.get '/', oauthClient.redirector('/person'), index.index
+main = require './controllers/main'
+app.get '/', oauthClient.redirector('/person'), main.index
 app.post '/logOut', oauthClient.logOut
 
 person = require './controllers/person'
+friends = require './controllers/friends'
+links = require './controllers/links'
+likes = require './controllers/likes'
 
 app.all '/person*', auth
 
 app.get '/person', person.index
-
-app.get '/person/friends', person.friends
-app.get '/person/links/chord', person.linksChord
-
 app.post '/person/getData', person.getData
-app.post '/person/countLinks', person.countLinks
-app.get '/person/links', person.links
-app.post '/person/countLikes/byName', person.countLikesByName
-app.get '/person/likes/byName', person.likesByName
-app.post '/person/countLikes/byCategory', person.countLikesByCategory
-app.get '/person/likes/byCategory', person.likesByCategory
 
-app.post '/person/links/histogram/count', person.countLinksHistogram
-app.get '/person/links/histogram', person.getLinksHistogram
+app.get '/person/friends', friends.index
+app.get '/person/friends/connections', friends.connections
 
-app.all  '/person/mapReduce/*', person.validateMapReduceOperation
-app.post '/person/mapReduce/:operation/request', person.mapReduce
-app.get  '/person/mapReduce/:operation/results', person.mapReduceResults
+app.get '/person/links', links.index
+app.get '/person/links/flow', links.flow
+app.get '/person/links/histogram', links.histogram
 
-app.post '/person/logisticRegressionOnLinks', person.logisticRegressionOnLinks
+app.get '/person/likes', likes.index
+app.get '/person/likes/cloud', likes.cloud
+app.get '/person/likes/histogram', likes.histogram
+
+
+mapreduce = require './controllers/mapreduce'
+app.all  '/person/mapReduce/*', mapreduce.validateMapReduceOperation
+app.post '/person/mapReduce/:operation/request', mapreduce.mapReduce
+app.get  '/person/mapReduce/:operation/results', mapreduce.mapReduceResults
+
 
 app.use express.static __dirname + '/public'
 

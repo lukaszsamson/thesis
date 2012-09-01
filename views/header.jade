@@ -17,4 +17,6 @@
                 a(href='#{key}') #{val}
         - if (loggedIn)
           form.navbar-form.pull-right(method='post', action='/logOut/')
-            button.btn(type='submit') Log out
+            button.btn(type='submit')
+              i.icon-off
+              | Log out

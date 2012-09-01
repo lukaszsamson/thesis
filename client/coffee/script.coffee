@@ -1,4 +1,4 @@
-showModal = (header, body) ->
+window.showModal = showModal = (header, body) ->
     modal = $ '#modal'
     modal.find('h3').text header
     modal.find('p').text body
@@ -43,24 +43,31 @@ $ () ->
       type: 'POST'
       success: (data, textStatus, jqXHR) ->
         showModal 'Data requested', 'Your data will be ready soon.'
-  $('#countLinksHistogram').click () ->
+  $('#linksHistogram').click () ->
     $.ajax
-      url: '/person/links/histogram/count'
+      url: '/person/mapReduce/linksHistogram/request'
       type: 'POST'
       success: (data, textStatus, jqXHR) ->
         showModal 'Data requested', 'Your data will be ready soon.'
 
-  $('#findConnections').click () ->
+  $('#friendsConnections').click () ->
     $.ajax
-      url: '/person/mapReduce/findConnections/request'
+      url: '/person/mapReduce/friendsConnections/request'
       type: 'POST'
       success: (data, textStatus, jqXHR) ->
         showModal data.header, data.body
 
 
-  $('#findLinkFlows').click () ->
+  $('#linksFlow').click () ->
     $.ajax
-      url: '/person/mapReduce/findLinkFlows/request'
+      url: '/person/mapReduce/linksFlow/request'
       type: 'POST'
       success: (data, textStatus, jqXHR) ->
         showModal data.header, data.body
+
+  $('#likesHistogram').click () ->
+    $.ajax
+      url: '/person/mapReduce/likesHistogram/request'
+      type: 'POST'
+      success: (data, textStatus, jqXHR) ->
+        showModal 'Data requested', 'Your data will be ready soon.'

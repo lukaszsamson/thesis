@@ -28,7 +28,10 @@ svg.append("circle")
   .attr("r", outerRadius)
 
 
-d3.json("/person/mapReduce/findLinkFlows/results", (json) ->
+d3.json("/person/mapReduce/linksFlow/results", (json) ->
+  if not json
+    return window.showModal 'No data found', 'You have to request analysis first.'
+
   for a in json.axis
     a.color = '#'+('00000'+(Math.random()*16777216<<0).toString(16)).substr(-6)
   # Compute the chord layout.
