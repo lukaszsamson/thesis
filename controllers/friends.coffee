@@ -15,3 +15,11 @@ exports.connections = (req, res) ->
     menu: menu
     loggedIn: loggedIn: req.loggedIn?
   }
+
+exports.connectionsWeighted = (req, res) ->
+  res.render 'person/friends/connectionsWeighted', {
+  title: 'Friends connections weighted'
+  id: '/person/friends'
+  menu: menu
+  loggedIn: loggedIn: req.loggedIn?
+  }

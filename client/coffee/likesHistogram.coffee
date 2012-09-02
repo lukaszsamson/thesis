@@ -4,7 +4,7 @@
 #formatCount = d3.format(",.0f")
 formatCount = (d) -> d.toString()
 margin = {top: 10, right: 30, bottom: 30, left: 30}
-width = 400 - margin.left - margin.right
+width = 600 - margin.left - margin.right
 height = 400 - margin.top - margin.bottom
 
 d3.json("/person/mapReduce/likesHistogram/results", (json) ->

@@ -50,6 +50,7 @@ app.post '/person/getData', person.getData
 
 app.get '/person/friends', friends.index
 app.get '/person/friends/connections', friends.connections
+app.get '/person/friends/connectionsWeighted', friends.connectionsWeighted
 
 app.get '/person/links', links.index
 app.get '/person/links/flow', links.flow

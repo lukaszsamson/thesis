@@ -3,6 +3,7 @@ reduceNoop = (key, values) ->
 
 operations = {
   friendsConnections: require('./queries/friendsConnections')
+  friendsConnectionsWeighted: require('./queries/friendsConnectionsWeighted')
   linksFlow: require('./queries/linksFlow')
   likesFlow: require('./queries/likesFlow')
   linksHistogram: require('./queries/linksHistogram')

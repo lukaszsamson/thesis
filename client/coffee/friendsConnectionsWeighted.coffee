@@ -5,7 +5,7 @@ color = d3.scale.category20()
 
 force = d3.layout.force()
   .charge(-120)
-  .linkDistance(180)
+  .linkDistance(120)
   .size([width, height])
 
 svg = d3.select("#chart")
@@ -13,7 +13,7 @@ svg = d3.select("#chart")
   .attr("width", width)
   .attr("height", height)
 
-d3.json("/person/mapReduce/friendsConnections/results", (json) ->
+d3.json("/person/mapReduce/friendsConnectionsWeighted/results", (json) ->
   if not json
     return window.showModal 'No data found', 'You have to request analysis first.'
 
@@ -21,6 +21,7 @@ d3.json("/person/mapReduce/friendsConnections/results", (json) ->
   connections = []
   for c in json.connections
     from = to = -1
+    value = c.value
     for i in [0...nodes.length]
       if nodes[i].id == c.from
         from = i
@@ -32,13 +33,14 @@ d3.json("/person/mapReduce/friendsConnections/results", (json) ->
     connections.push {
       source: from
       target: to
-      value: 1
+      value: value
     }
 
 
   force
     .nodes(nodes)
     .links(connections)
+    .linkDistance((d) -> 180 / Math.sqrt(d.value))
     .start();
 
   link = svg.selectAll("line.link")

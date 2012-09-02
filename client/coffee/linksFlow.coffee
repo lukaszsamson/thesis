@@ -1,5 +1,5 @@
-width = 720
-height = 720
+width = 620
+height = 620
 outerRadius = Math.min(width, height) / 2 - 10
 innerRadius = outerRadius - 24
 

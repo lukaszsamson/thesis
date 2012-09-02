@@ -57,7 +57,12 @@ $ () ->
       success: (data, textStatus, jqXHR) ->
         showModal data.header, data.body
 
-
+  $('#friendsConnectionsWeighted').click () ->
+    $.ajax
+      url: '/person/mapReduce/friendsConnectionsWeighted/request'
+      type: 'POST'
+      success: (data, textStatus, jqXHR) ->
+        showModal data.header, data.body
   $('#linksFlow').click () ->
     $.ajax
       url: '/person/mapReduce/linksFlow/request'
