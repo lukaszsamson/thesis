@@ -32,7 +32,7 @@ oauthClient = require './utils/oauth-client'
 auth = oauthClient.authenticate
   appId: '102219526568766'
   appSecret: 'ee755ea1ef4ab900bb46b497d5a93ca0'
-  scope: 'read_stream'
+  scope: 'read_stream,user_likes,friends_likes'
 
 main = require './controllers/main'
 app.get '/', oauthClient.redirector('/person'), main.index
