@@ -1,28 +1,28 @@
 
 exports.m = () ->
-  links = {}
+  likes = {}
   names = {}
   names[@facebookId] = @name
-  @links.forEach (l) =>
+  @likes.forEach (l) =>
     share = {
     id: @facebookId
     friends: @friends.map (f) -> f.facebookId
     date: l.created_time
     }
-    if not links[l.link]
-      links[l.link] = []
-    links[l.link].push share
+    if not likes[l.name]
+      likes[l.name] = []
+    likes[l.name].push share
   @friends.forEach (f) =>
     names[f.facebookId] = f.name
-    f.links.forEach (l) =>
+    f.likes.forEach (l) =>
       share = {
       id: f.facebookId
       friends: [@facebookId].concat(f.mutualFriends.map (mf) -> mf.facebookId)
       date: l.created_time
       }
-      if not links[l.link]
-        links[l.link] = []
-      links[l.link].push share
+      if not likes[l.name]
+        likes[l.name] = []
+      likes[l.name].push share
 
   order = (a, b) ->
     if a.date > b.date
@@ -32,7 +32,7 @@ exports.m = () ->
     return 0
 
   flows = {}
-  for l, a of links
+  for l, a of likes
     a.sort order
     for i in [0...a.length]
       for j in [(i + 1)...a.length]
@@ -67,7 +67,6 @@ exports.m = () ->
   emit(@facebookId, {
   matrix: result
   axis: axis
-  flows: flows
   })
 
 exports.r = (key, values) ->

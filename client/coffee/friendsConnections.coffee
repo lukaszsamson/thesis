@@ -52,7 +52,7 @@ d3.json("/person/mapReduce/friendsConnections/results", (json) ->
     .enter().append("circle")
     .attr("class", "node")
     .attr("r", 5)
-    .style("fill", (d) -> color(d.group))
+    .style("fill", (d) -> color(if d.user then 0 else 1))
     .call(force.drag);
 
   node.append("title")

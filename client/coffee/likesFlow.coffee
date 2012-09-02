@@ -28,7 +28,7 @@ svg.append("circle")
   .attr("r", outerRadius)
 
 
-d3.json("/person/mapReduce/linksFlow/results", (json) ->
+d3.json("/person/mapReduce/likesFlow/results", (json) ->
   if not json
     return window.showModal 'No data found', 'You have to request analysis first.'
 

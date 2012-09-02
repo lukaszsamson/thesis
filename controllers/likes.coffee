@@ -23,3 +23,11 @@ exports.histogram = (req, res) ->
   menu: menu
   loggedIn: loggedIn: req.loggedIn?
   }
+
+exports.flow = (req, res) ->
+  res.render 'person/likes/flow', {
+  title: 'Likes flow'
+  id: '/person/likes'
+  menu: menu
+  loggedIn: loggedIn: req.loggedIn?
+  }

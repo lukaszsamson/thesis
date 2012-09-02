@@ -3,12 +3,14 @@ exports.m = () ->
   people = [{
   name: @name
   id: @facebookId
+  user: true
   }]
   connections = []
   @friends.forEach (f) =>
     people.push {
     name: f.name
     id: f.facebookId
+    user: false
     }
     connections.push {
     from: @facebookId

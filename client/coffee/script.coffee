@@ -71,3 +71,10 @@ $ () ->
       type: 'POST'
       success: (data, textStatus, jqXHR) ->
         showModal 'Data requested', 'Your data will be ready soon.'
+
+  $('#likesFlow').click () ->
+    $.ajax
+      url: '/person/mapReduce/likesFlow/request'
+      type: 'POST'
+      success: (data, textStatus, jqXHR) ->
+        showModal data.header, data.body

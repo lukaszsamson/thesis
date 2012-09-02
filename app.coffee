@@ -58,6 +58,7 @@ app.get '/person/links/histogram', links.histogram
 app.get '/person/likes', likes.index
 app.get '/person/likes/cloud', likes.cloud
 app.get '/person/likes/histogram', likes.histogram
+app.get '/person/likes/flow', likes.flow
 
 
 mapreduce = require './controllers/mapreduce'
