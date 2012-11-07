@@ -8,6 +8,8 @@ operations = {
   likesFlow: require('./queries/likesFlow')
   linksHistogram: require('./queries/linksHistogram')
   likesHistogram: require('./queries/likesHistogram')
+  linksLogisticRegression: require('./queries/linksLogisticRegression')
+  likesLogisticRegression: require('./queries/likesLogisticRegression')
 }
 
 

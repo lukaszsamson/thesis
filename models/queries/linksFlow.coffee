@@ -56,18 +56,19 @@ exports.m = () ->
         id: j
         name: names[j]
         }
-
+  cnt = 0
   result = []
   for i in [0...axis.length]
     result[i] = []
     for j in [0...axis.length]
       result[i][j] = if flows[axis[i].id] and flows[axis[i].id][axis[j].id] then flows[axis[i].id][axis[j].id] else 0
+      cnt += result[i][j]
 
 
   emit(@facebookId, {
   matrix: result
   axis: axis
-  flows: flows
+  cnt: cnt
   })
 
 exports.r = (key, values) ->

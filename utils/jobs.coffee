@@ -121,6 +121,8 @@ getLinks = (person, access_token, done) ->
     person: person
     access_token: access_token
   ).attempts(3)
+  .on('complete', done)
+  .on('failed', done)
   .save done
 
 jobs.process('getLinks', 3, (job, done) ->

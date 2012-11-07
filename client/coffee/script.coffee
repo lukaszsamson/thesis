@@ -17,69 +17,10 @@ $ () ->
       success: (data, textStatus, jqXHR) ->
         showModal data.header, data.body
 
-  $('#countLinks').click () ->
-    $.ajax
-      url: '/person/countLinks'
-      type: 'POST'
-      success: (data, textStatus, jqXHR) ->
-          showModal 'Data requested', 'Your data will be ready soon.'
 
-  $('#countLikesByName').click () ->
+  $('a[data-operation]').click () ->
     $.ajax
-      url: '/person/countLikes/byName'
-      type: 'POST'
-      success: (data, textStatus, jqXHR) ->
-          showModal 'Data requested', 'Your data will be ready soon.'
-
-  $('#countLikesByCategory').click () ->
-    $.ajax
-      url: '/person/countLikes/byCategory'
-      type: 'POST'
-      success: (data, textStatus, jqXHR) ->
-          showModal 'Data requested', 'Your data will be ready soon.'
-  $('#logisticRegressionOnLinks').click () ->
-    $.ajax
-      url: '/person/logisticRegressionOnLinks'
-      type: 'POST'
-      success: (data, textStatus, jqXHR) ->
-        showModal 'Data requested', 'Your data will be ready soon.'
-  $('#linksHistogram').click () ->
-    $.ajax
-      url: '/person/mapReduce/linksHistogram/request'
-      type: 'POST'
-      success: (data, textStatus, jqXHR) ->
-        showModal 'Data requested', 'Your data will be ready soon.'
-
-  $('#friendsConnections').click () ->
-    $.ajax
-      url: '/person/mapReduce/friendsConnections/request'
-      type: 'POST'
-      success: (data, textStatus, jqXHR) ->
-        showModal data.header, data.body
-
-  $('#friendsConnectionsWeighted').click () ->
-    $.ajax
-      url: '/person/mapReduce/friendsConnectionsWeighted/request'
-      type: 'POST'
-      success: (data, textStatus, jqXHR) ->
-        showModal data.header, data.body
-  $('#linksFlow').click () ->
-    $.ajax
-      url: '/person/mapReduce/linksFlow/request'
-      type: 'POST'
-      success: (data, textStatus, jqXHR) ->
-        showModal data.header, data.body
-
-  $('#likesHistogram').click () ->
-    $.ajax
-      url: '/person/mapReduce/likesHistogram/request'
-      type: 'POST'
-      success: (data, textStatus, jqXHR) ->
-        showModal 'Data requested', 'Your data will be ready soon.'
-
-  $('#likesFlow').click () ->
-    $.ajax
-      url: '/person/mapReduce/likesFlow/request'
+      url: "/person/mapReduce/#{$(@).data('operation')}/request"
       type: 'POST'
       success: (data, textStatus, jqXHR) ->
         showModal data.header, data.body

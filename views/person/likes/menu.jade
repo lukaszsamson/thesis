@@ -9,11 +9,16 @@
         a(href="/person/likes/cloud") Cloud
       li.nav-header Flow
       li
-        a#likesFlow(href="#") Calculate
+        a(data-operation="likesFlow") Calculate
       li
         a(href="/person/likes/flow") Result
       li.nav-header Histogram
       li
-        a#likesHistogram(href="#") Calculate
+        a(data-operation="likesHistogram") Calculate
+      li
+        a(href="/person/likes/histogram") Result
+      li.nav-header Likes logistic regression
+      li
+        a(data-operation="likesLogisticRegression") Calculate
       li
         a(href="/person/likes/histogram") Result

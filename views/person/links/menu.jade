@@ -7,12 +7,17 @@
 
       li.nav-header Flow
       li
-        a#linksFlow(href="#") Calculate
+        a(data-operation="linksFlow") Calculate
       li
         a(href="/person/links/flow") Result
 
       li.nav-header Histogram
       li
-        a#linksHistogram(href="#") Calculate
+        a(data-operation="linksHistogram") Calculate
       li
         a(href="/person/links/histogram") Result
+      li.nav-header Logistic regression
+      li
+        a(data-operation="linksLogisticRegression") Calculate
+      li
+        a(href="/person/links/logisticRegression") Result

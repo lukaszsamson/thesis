@@ -1,3 +1,63 @@
+partition = (vertices, connections) ->
+  sources = {}
+  nodes = []
+  for v in vertices
+    if not sources[v[0]]
+      sources[v[0]] = [v[1]]
+    else
+      sources[v[0]].push(v[1])
+    if nodes.indexOf(v[0]) == -1
+      nodes.push(v[0])
+    if nodes.indexOf(v[1]) == -1
+      nodes.push(v[1])
+      
+  partitions = []
+  for source, targets of sources
+    p = {
+      id: Math.max.apply(null, targets.concat(source))
+      source: parseInt(source, 10)
+      targets: targets
+    }
+    partitions.push(p)
+    console.log('%d %d %s', p.id, p.source, p.targets)
+
+  console.log(partitions)
+    
+  iter = 1
+  change = true
+  while change
+    console.log('after iteration %d', iter)
+    iter++
+    change = false
+    maxIds = {}
+      
+    for n in nodes
+      max = -1
+      for p in partitions
+        if p.id > max
+          if p.source == n or p.targets.indexOf(n) != -1
+            max = p.id
+      maxIds[n] = max
+    
+    for p in partitions
+      newId = Math.max.apply(null, p.targets.map((t) -> maxIds[t]).concat(maxIds[p.source]))
+      if newId != p.id
+        console.log('id %d changed to %d', p.id, newId)
+        p.id = newId
+        change = true
+        
+      console.log('%d %d %s', p.id, p.source, p.targets)
+      
+  for c in connections
+    found = false
+    for p in partitions
+      if p.source == c.source and p.targets.indexOf(c.target) != -1
+        found = true
+        c.partition = p.id
+        break
+    if not found
+      alert(c)
+
 width = 960
 height = 600
 
@@ -35,7 +95,10 @@ d3.json("/person/mapReduce/friendsConnectionsWeighted/results", (json) ->
       target: to
       value: value
     }
-
+  connections = connections.filter((l) -> l.value > 1 and l.source != 0 and l.target != 0)
+  vertices = connections.map((l) -> [l.source, l.target])  
+    
+  partition vertices, connections
 
   force
     .nodes(nodes)
@@ -48,6 +111,7 @@ d3.json("/person/mapReduce/friendsConnectionsWeighted/results", (json) ->
     .enter().append("line")
     .attr("class", "link")
     .style("stroke-width", (d) -> Math.sqrt(d.value))
+    .style("stroke", (d) -> color(d.partition % 20))
 
   node = svg.selectAll("circle.node")
     .data(nodes)

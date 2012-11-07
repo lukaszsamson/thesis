@@ -55,6 +55,8 @@ app.get '/person/friends/connectionsWeighted', friends.connectionsWeighted
 app.get '/person/links', links.index
 app.get '/person/links/flow', links.flow
 app.get '/person/links/histogram', links.histogram
+app.get '/person/links/logisticRegression', links.logisticRegression
+
 
 app.get '/person/likes', likes.index
 app.get '/person/likes/cloud', likes.cloud
