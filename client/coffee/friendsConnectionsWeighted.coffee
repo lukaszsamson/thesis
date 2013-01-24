@@ -25,7 +25,7 @@ partition = (vertices, connections) ->
     
   iter = 1
   change = true
-  while change
+  while change and iter <= 1
     console.log('after iteration %d', iter)
     iter++
     change = false
@@ -58,14 +58,14 @@ partition = (vertices, connections) ->
     if not found
       alert(c)
 
-width = 960
+width = 800
 height = 600
 
 color = d3.scale.category20()
 
 force = d3.layout.force()
-  .charge(-120)
-  .linkDistance(120)
+  .charge(-60)
+  .linkDistance(100)
   .size([width, height])
 
 svg = d3.select("#chart")
@@ -103,7 +103,7 @@ d3.json("/person/mapReduce/friendsConnectionsWeighted/results", (json) ->
   force
     .nodes(nodes)
     .links(connections)
-    .linkDistance((d) -> 180 / Math.sqrt(d.value))
+    .linkDistance((d) -> 150 / Math.sqrt(d.value))
     .start();
 
   link = svg.selectAll("line.link")

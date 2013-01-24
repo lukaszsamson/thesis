@@ -1,4 +1,4 @@
-partition = (vertices) ->
+partition = (vertices, connections) ->
   sources = {}
   nodes = []
   for v in vertices
@@ -25,7 +25,7 @@ partition = (vertices) ->
     
   iter = 1
   change = true
-  while change
+  while change and iter <= 1
     console.log('after iteration %d', iter)
     iter++
     change = false
@@ -47,16 +47,26 @@ partition = (vertices) ->
         change = true
         
       console.log('%d %d %s', p.id, p.source, p.targets)
+      
+  for c in connections
+    found = false
+    for p in partitions
+      if p.source == c.source and p.targets.indexOf(c.target) != -1
+        found = true
+        c.partition = p.id
+        console.log(p.id)
+        break
+    if not found
+      alert(c)
 
-
-width = 960
+width = 800
 height = 600
 
 color = d3.scale.category20()
 
 force = d3.layout.force()
-  .charge(-120)
-  .linkDistance(180)
+  .charge(-80)
+  .linkDistance(100)
   .size([width, height])
 
 svg = d3.select("#chart")
@@ -88,7 +98,7 @@ d3.json("/person/mapReduce/friendsConnections/results", (json) ->
   connections = connections.filter((l) -> l.value >= 1 and l.source != 0 and l.target != 0)
   vertices = connections.map((l) -> [l.source, l.target])  
     
-  partition vertices  
+  partition vertices, connections
     
     
     
@@ -114,6 +124,7 @@ d3.json("/person/mapReduce/friendsConnections/results", (json) ->
     .enter().append("line")
     .attr("class", "link")
     .style("stroke-width", (d) -> Math.sqrt(d.value))
+    .style("stroke", (d) -> color(d.partition % 20))
 
   node = svg.selectAll("circle.node")
     .data(nodes)
