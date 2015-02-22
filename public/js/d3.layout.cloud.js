@@ -1,6 +1,6 @@
 // Word cloud layout by Jason Davies, http://www.jasondavies.com/word-cloud/
 // Algorithm due to Jonathan Feinberg, http://static.mrfeinberg.com/bv_ch03.pdf
-(function(exports) {
+(function() {
   function cloud() {
     var size = [256, 256],
         text = cloudText,
@@ -30,7 +30,7 @@
             d.weight = fontWeight.call(this, d, i);
             d.rotate = rotate.call(this, d, i);
             d.size = ~~fontSize.call(this, d, i);
-            d.padding = cloudPadding.call(this, d, i);
+            d.padding = padding.call(this, d, i);
             return d;
           }).sort(function(a, b) { return b.size - a.size; });
 
@@ -48,7 +48,7 @@
           d.x = (size[0] * (Math.random() + .5)) >> 1;
           d.y = (size[1] * (Math.random() + .5)) >> 1;
           cloudSprite(d, data, i);
-          if (place(board, d, bounds)) {
+          if (d.hasText && place(board, d, bounds)) {
             tags.push(d);
             event.word(d);
             if (bounds) cloudBounds(bounds, d);
@@ -225,7 +225,7 @@
         y = 0,
         maxh = 0,
         n = data.length;
-    di--;
+    --di;
     while (++di < n) {
       d = data[di];
       c.save();
@@ -254,6 +254,7 @@
       c.translate((x + (w >> 1)) / ratio, (y + (h >> 1)) / ratio);
       if (d.rotate) c.rotate(d.rotate * cloudRadians);
       c.fillText(d.text, 0, 0);
+      if (d.padding) c.lineWidth = 2 * d.padding, c.strokeText(d.text, 0, 0);
       c.restore();
       d.width = w;
       d.height = h;
@@ -263,16 +264,17 @@
       d.y1 = h >> 1;
       d.x0 = -d.x1;
       d.y0 = -d.y1;
+      d.hasText = true;
       x += w;
     }
     var pixels = c.getImageData(0, 0, (cw << 5) / ratio, ch / ratio).data,
         sprite = [];
     while (--di >= 0) {
       d = data[di];
+      if (!d.hasText) continue;
       var w = d.width,
           w32 = w >> 5,
-          h = d.y1 - d.y0,
-          p = d.padding;
+          h = d.y1 - d.y0;
       // Zero the buffer
       for (var i = 0; i < h * w32; i++) sprite[i] = 0;
       x = d.xoff;
@@ -284,11 +286,6 @@
         for (var i = 0; i < w; i++) {
           var k = w32 * j + (i >> 5),
               m = pixels[((y + j) * (cw << 5) + (x + i)) << 2] ? 1 << (31 - (i % 32)) : 0;
-          if (p) {
-            if (j) sprite[k - w32] |= m;
-            if (j < w - 1) sprite[k + w32] |= m;
-            m |= (m << 1) | (m >> 1);
-          }
           sprite[k] |= m;
           seen |= m;
         }
@@ -387,8 +384,7 @@
     canvas.width = (cw << 5) / ratio;
     canvas.height = ch / ratio;
   } else {
-    // node-canvas support
-    var Canvas = require("canvas");
+    // Attempt to use node-canvas.
     canvas = new Canvas(cw << 5, ch);
   }
 
@@ -397,8 +393,9 @@
         archimedean: archimedeanSpiral,
         rectangular: rectangularSpiral
       };
-  c.fillStyle = "red";
+  c.fillStyle = c.strokeStyle = "red";
   c.textAlign = "center";
 
-  exports.cloud = cloud;
-})(typeof exports === "undefined" ? d3.layout || (d3.layout = {}) : exports);
+  if (typeof module === "object" && module.exports) module.exports = cloud;
+  else (d3.layout || (d3.layout = {})).cloud = cloud;
+})();

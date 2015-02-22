@@ -50,7 +50,7 @@ PersonSchema.statics.updateFriend = (personId, friend, done) ->
       'friends.facebookId': friend.id
     }, {
       $set: {
-        'friends.$.gender': friend.gender
+        'friends.$.gender': friend.gender ? null
         'friends.$.updatedDate': new Date
       }
     }, {

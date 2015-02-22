@@ -73,7 +73,7 @@ jobs.process('getFriend', 3, (job, done) ->
         (c2) -> getFriendLikes(job.data.appUser, friend, job.data.access_token, c2),
         (c2) -> getMutualFriends(job.data.appUser, friend, job.data.access_token, c2)
       ], c1
-    ], c0
+  ], c0
   ], done))
 
 
