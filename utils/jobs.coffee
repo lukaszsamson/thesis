@@ -5,6 +5,7 @@ async = require 'async'
 Graph = require('../utils/graph-client').Graph
 User = require '../models/user'
 Person = require '../models/person'
+Page = require '../models/page'
 sio = require('./socket-communicator')
 
 
@@ -73,7 +74,7 @@ jobs.process('getFriend', 3, (job, done) ->
         (c2) -> getFriendLikes(job.data.appUser, friend, job.data.access_token, c2),
         (c2) -> getMutualFriends(job.data.appUser, friend, job.data.access_token, c2)
       ], c1
-    ], c0
+  ], c0
   ], done))
 
 
@@ -127,9 +128,12 @@ getLinks = (person, access_token, done) ->
 
 jobs.process('getLinks', 3, (job, done) ->
   async.waterfall([
-    (c0) -> (new Graph(job.data.access_token)).getLinks(job.data.person.id, c0),
-    (links, c0) -> async.series([
-      (c1) -> Person.updateLinks(job.data.person.id, links, c1)
+    (c0) -> (new Graph(job.data.access_token)).getLinks(job.data.person.id, job.data.person.next, c0),
+    (links, next, c0) -> async.series([
+      (c1) -> if job.data.person.first_name then Person.updateLinks(job.data.person.id, links, c1) else Page.updateLinks(job.data.person.id, links, c1)
+      (c1) -> 
+        job.data.person.next = next
+        if next then getLinks(job.data.person, job.data.access_token, c1) else c1(null)
     #, (c1) -> async.forEach links, ((link, c2) -> scrapLink link.link, c2), c1
     ], c0)
   ], done))
@@ -146,9 +150,12 @@ getFriendLinks = (person, friend, access_token, done) ->
 
 jobs.process('getFriendLinks', 3, (job, done) ->
   async.waterfall([
-    (c0) -> (new Graph(job.data.access_token)).getLinks(job.data.friend.id, c0),
-    (links, c0) -> async.series([
+    (c0) -> (new Graph(job.data.access_token)).getLinks(job.data.friend.id, job.data.friend.next, c0),
+    (links, next, c0) -> async.series([
       (c1) -> Person.updateFriendLinks(job.data.person.id, job.data.friend.id, links, c1)
+      (c1) -> 
+        job.data.friend.next = next
+        if next then getFriendLinks(job.data.person, job.data.friend, job.data.access_token, c1) else c1(null)
     #, (c1) -> async.forEach links, ((link, c2) -> scrapLink link.link, c2), c1
     ], c0)
   ], done))
@@ -168,7 +175,34 @@ getLikes = (person, access_token, done) ->
 jobs.process('getLikes', 3, (job, done) ->
   async.waterfall([
     (c0) -> (new Graph(job.data.access_token)).getLikes(job.data.person.id, c0),
-    (likes, c0) -> Person.updateLikes(job.data.person.id, likes, c0)
+    (likes, c0) -> async.series([
+      (c1) -> if job.data.person.first_name then Person.updateLikes(job.data.person.id, likes, c1) else Page.updateLikes(job.data.person.id, likes, c1),
+      (c1) -> if job.data.person.first_name then async.forEach(likes, ((like, c2) ->
+        getPage(job.data.appUser, like, job.data.access_token, c2)
+      ), c1) else c1(null)
+    ], c0)
+  ], done))
+
+getPage = (person, like, access_token, done) ->
+  console.log 'Creating getPage job for %s', like.name
+  jobs.create('getPage',
+    title: 'Getting page ' + like.name
+    person: person
+    like: like
+    access_token: access_token
+  ).attempts(3)
+  .save done
+
+jobs.process('getPage', 3, (job, done) ->
+  async.waterfall([
+    (c0) -> (new Graph(job.data.access_token)).getFriend(job.data.like.id, c0),
+    (page, c0) -> async.series([
+      (c1) -> Page.saveOrUpdate(page, c1),
+      (c1) -> async.parallel([
+        (c2) -> getLinks(page, job.data.access_token, c2),
+        (c2) -> getLikes(page, job.data.access_token, c2)
+      ], c1)
+    ], c0)
   ], done))
 
 getFriendLikes = (person, friend, access_token, done) ->

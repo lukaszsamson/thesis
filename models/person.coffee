@@ -30,16 +30,16 @@ PersonSchema.statics.saveOrUpdate = (personData, done) ->
         name: personData.name
         firstName: personData.first_name
         lastName: personData.last_name
-        gender: personData.gender
+        gender: personData.gender ? null
         facebookId: personData.id
         createdDate: new Date
         updatedDate: new Date
       ).save done
     else
       person.name = personData.name
-      firstName: personData.first_name
-      lastName: personData.last_name
-      gender: personData.gender
+      person.firstName = personData.first_name
+      person.lastName = personData.last_name
+      person.gender = personData.gender ? null
       person.updatedDate = new Date
       person.save(done)
   )

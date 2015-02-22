@@ -2,7 +2,8 @@ express = require 'express'
 http = require 'http'
 
 mongoose = require('mongoose')
-RedisStore = require('connect-redis')(express)
+session = require('express-session')
+RedisStore = require('connect-redis')(session)
 
 db = mongoose.connect 'mongodb://localhost/test'
 
@@ -10,14 +11,14 @@ app = express()
 
 
 app.set 'view engine', 'jade'
-cookieParser = express.cookieParser 'shoop da woop'
+cookieParser =  require('cookie-parser')('shoop da woop')
 app.use cookieParser
 sessionStore = new RedisStore(
   #host: 'localhost'
   #port: ''
   ttl: 3600 # 1 hour
 )
-app.use express.session({
+app.use session({
   cookie:
     path: '/'
     httpOnly: true
@@ -25,8 +26,8 @@ app.use express.session({
   store: sessionStore
 })
 
-app.use express.logger()
-app.use express.bodyParser()
+#app.use express.logger()
+app.use require('body-parser')()
 
 oauthClient = require './utils/oauth-client'
 auth = oauthClient.authenticate
@@ -72,7 +73,7 @@ app.get  '/person/mapReduce/:operation/results', mapreduce.mapReduceResults
 
 app.use express.static __dirname + '/public'
 
-app.use express.errorHandler()
+app.use require('errorhandler')()
 
 
 server = http.createServer(app)

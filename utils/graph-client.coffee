@@ -3,12 +3,12 @@ request = require './simple-request'
 class GraphClient
   constructor: (@access_token) ->
 
-  getLinks: (facebookId, callback) ->
-    request @getLinksUrl(facebookId), (error, body) ->
+  getLinks: (facebookId, next, callback) ->
+    request next ? @getLinksUrl(facebookId), (error, body) ->
       return callback error if error
       try
-        data = JSON.parse(body).data
-        callback null, data
+        response = JSON.parse(body)
+        callback null, response.data, response.paging.next
       catch e
         callback e
         
